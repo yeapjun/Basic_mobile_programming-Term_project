@@ -2,6 +2,8 @@ package com.example.caloriehunter.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Toast;
 
@@ -21,10 +23,14 @@ import com.example.caloriehunter.databinding.ActivityMainBinding;
  */
 public class MainActivity extends AppCompatActivity {
 
+    private static final int LOADING_TIMEOUT_MS = 10000; // 10초 타임아웃
+
     private ActivityMainBinding binding;
     private FirebaseRepository firebaseRepository;
     private User currentUser;
     private Monster activeMonster;
+    private Handler timeoutHandler;
+    private boolean isLoadingComplete = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +50,15 @@ public class MainActivity extends AppCompatActivity {
         // 화면 복귀 시 데이터 갱신
         if (currentUser != null) {
             loadActiveMonster();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 타임아웃 핸들러 정리 (메모리 누수 방지)
+        if (timeoutHandler != null) {
+            timeoutHandler.removeCallbacksAndMessages(null);
         }
     }
 
@@ -72,6 +87,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void initializeUser() {
         showLoading(true);
+        isLoadingComplete = false;
+
+        // 타임아웃 설정 (10초 후에도 로딩 중이면 에러 표시)
+        timeoutHandler = new Handler(Looper.getMainLooper());
+        timeoutHandler.postDelayed(() -> {
+            if (!isLoadingComplete) {
+                showLoading(false);
+                Toast.makeText(MainActivity.this,
+                    "연결 시간 초과. 인터넷 연결을 확인해주세요.", Toast.LENGTH_LONG).show();
+            }
+        }, LOADING_TIMEOUT_MS);
 
         String userId = firebaseRepository.getCurrentUserId();
 
@@ -88,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onError(String message) {
+                    isLoadingComplete = true;
                     showLoading(false);
                     Toast.makeText(MainActivity.this, "로그인 실패: " + message, Toast.LENGTH_SHORT).show();
                 }
@@ -102,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(User user) {
                 currentUser = user;
+                isLoadingComplete = true;
                 runOnUiThread(() -> {
                     updateUserUI();
                     loadActiveMonster();
@@ -111,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onError(String message) {
+                isLoadingComplete = true;
                 runOnUiThread(() -> {
                     showLoading(false);
                     Toast.makeText(MainActivity.this, "유저 생성 실패: " + message, Toast.LENGTH_SHORT).show();
@@ -124,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(User user) {
                 currentUser = user;
+                isLoadingComplete = true;
                 runOnUiThread(() -> {
                     updateUserUI();
                     loadActiveMonster();
@@ -133,6 +163,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onError(String message) {
+                isLoadingComplete = true;
                 runOnUiThread(() -> {
                     showLoading(false);
                     Toast.makeText(MainActivity.this, "데이터 로드 실패: " + message, Toast.LENGTH_SHORT).show();
