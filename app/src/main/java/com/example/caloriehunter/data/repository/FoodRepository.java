@@ -2,6 +2,7 @@ package com.example.caloriehunter.data.repository;
 
 import android.util.Log;
 
+import com.example.caloriehunter.BuildConfig;
 import com.example.caloriehunter.data.api.OpenFoodFactsApi;
 import com.example.caloriehunter.data.api.FoodSafetyApi;
 import com.example.caloriehunter.data.model.NutritionData;
@@ -31,7 +32,7 @@ public class FoodRepository {
     private final FoodSafetyApi foodSafetyApi;
 
     // 식약처 API 키 (공공데이터포털에서 발급)
-    private String foodSafetyApiKey = "";
+    private String foodSafetyApiKey = BuildConfig.MFDS_API_KEY;
 
     public interface FoodCallback {
         void onSuccess(NutritionData data);
