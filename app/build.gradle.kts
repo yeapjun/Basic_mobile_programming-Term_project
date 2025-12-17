@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
@@ -15,6 +18,21 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val properties = Properties()
+        val localPropertiesFile = project.rootProject.file("local.properties")
+
+        if (localPropertiesFile.exists()) {
+            properties.load(FileInputStream(localPropertiesFile))
+        }
+
+        // 식약처 키 등록
+        buildConfigField("String", "MFDS_API_KEY", properties.getProperty("MFDS_API_KEY", ""))
+    }
+
+    // [3] BuildConfig 기능 켜기 (이미 있다면 패스)
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:630000120534:android:2525489874f88b68a88f77",
+        "android_client_info": {
+          "package_name": "com.example.caloriehunter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-8rdj6CJRVDS35rAqSKVAoO6MkwOMOfM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:630000120534:android:d81badccccf23ee3a88f77",
         "android_client_info": {
           "package_name": "com.example.termproject"
