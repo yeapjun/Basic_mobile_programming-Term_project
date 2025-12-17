@@ -1,5 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Term Project</string>
+    <string name="app_name">Calorie Hunter</string>
 
-    <string name="google_maps_api_key">AIzaSyBlC6oAiYduwsj0dWahneoaiYVBuq3HV_A</string>
+    <!-- 메인 화면 -->
+    <string name="scan_food">음식을 스캔하세요!</string>
+    <string name="scan_guide">나쁜 음식은 몬스터가 되고\n좋은 음식은 무기가 됩니다</string>
+    <string name="start_battle">전투 시작</string>
+
+    <!-- 스캔 화면 -->
+    <string name="scan_barcode">바코드를 프레임 안에 맞춰주세요</string>
+    <string name="scan_barcode_guide">가공식품의 바코드를 스캔하면\n영양정보를 자동으로 분석합니다</string>
+    <string name="search_by_name">음식명으로 검색</string>
+    <string name="analyzing">영양 정보 분석 중...</string>
+    <string name="monster_found">몬스터 발견!</string>
+    <string name="item_found">아이템 획득!</string>
+
+    <!-- 전투 화면 -->
+    <string name="attack">공격</string>
+    <string name="use_potion">포션</string>
+    <string name="run_away">도망가기</string>
+    <string name="battle_start">전투 시작!</string>
+    <string name="victory">승리!</string>
+    <string name="defeat">패배...</string>
+
+    <!-- 인벤토리 -->
+    <string name="inventory">인벤토리</string>
+    <string name="tab_weapons">무기</string>
+    <string name="tab_potions">포션</string>
+    <string name="tab_history">기록</string>
+    <string name="empty_inventory">아이템이 없습니다</string>
+
+    <!-- 공통 -->
+    <string name="confirm">확인</string>
+    <string name="cancel">취소</string>
+    <string name="close">닫기</string>
+    <string name="back">뒤로가기</string>
+    <string name="loading">로딩 중...</string>
+    <string name="error">오류가 발생했습니다</string>
+    <string name="network_error">네트워크 오류</string>
+    <string name="product_not_found">제품을 찾을 수 없습니다</string>
 </resources>

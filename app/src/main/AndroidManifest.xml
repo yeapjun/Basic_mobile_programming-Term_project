@@ -2,19 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-<!--인터넷 권한-->
+    <!-- 인터넷 권한 -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-<!--위치 권한-->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-<!--저장소 권한-->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-
-<!--미디어 이미지 권한-->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- 카메라 권한 (바코드 스캔) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -22,24 +16,35 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AITravelFootprints"
-        tools:replace="android:allowBackup, android:theme, android:label"
-        tools:targetApi="31">
+        android:theme="@style/Theme.CalorieHunter"
+        tools:targetApi="35">
 
-<!--Google Maps API Key-->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
-
+        <!-- Main Activity -->
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Scan Activity -->
+        <activity
+            android:name=".ui.ScanActivity"
+            android:screenOrientation="portrait" />
+
+        <!-- Battle Activity -->
+        <activity
+            android:name=".ui.BattleActivity"
+            android:screenOrientation="portrait" />
+
+        <!-- Inventory Activity -->
+        <activity
+            android:name=".ui.InventoryActivity"
+            android:screenOrientation="portrait" />
+
     </application>
 
 </manifest>

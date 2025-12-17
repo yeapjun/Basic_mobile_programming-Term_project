@@ -1,5 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 기본 색상 -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- 브랜드 색상 -->
+    <color name="primary">#FF6B35</color>
+    <color name="primary_dark">#E55A2B</color>
+    <color name="primary_light">#FF8F5E</color>
+
+    <!-- 배경 색상 (다크 테마) -->
+    <color name="background_dark">#121212</color>
+    <color name="surface_dark">#1E1E1E</color>
+    <color name="surface_light">#2D2D2D</color>
+
+    <!-- 텍스트 색상 -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B3B3B3</color>
+    <color name="text_tertiary">#666666</color>
+
+    <!-- 게임 색상 -->
+    <color name="hp_red">#FF4757</color>
+    <color name="hp_green">#2ED573</color>
+    <color name="exp_yellow">#FFA502</color>
+    <color name="mana_blue">#3498DB</color>
+
+    <!-- 티어/등급 색상 -->
+    <color name="tier_common">#9CA3AF</color>
+    <color name="tier_rare">#3B82F6</color>
+    <color name="tier_epic">#A855F7</color>
+    <color name="tier_legendary">#FFD700</color>
+
+    <!-- 속성 색상 -->
+    <color name="element_sweet">#FF6B9D</color>
+    <color name="element_salty">#8B7355</color>
+    <color name="element_greasy">#4A5568</color>
+    <color name="element_toxic">#9B59B6</color>
+
+    <!-- 상태 색상 -->
+    <color name="success">#2ED573</color>
+    <color name="warning">#FFA502</color>
+    <color name="error">#FF4757</color>
 </resources>

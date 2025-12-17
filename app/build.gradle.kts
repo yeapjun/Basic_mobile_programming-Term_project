@@ -1,31 +1,18 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
-    id ("com.google.gms.google-services")
-}
-
-// Create a Properties object
-val localProperties = Properties()// Load the properties file from the root project directory
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(localPropertiesFile.inputStream())
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.example.termproject"
-    compileSdk = 36
+    namespace = "com.example.caloriehunter"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.termproject"
-        minSdk = 29
-        targetSdk = 36
+        applicationId = "com.example.caloriehunter"
+        minSdk = 26
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-        manifestPlaceholders["MAPS_API_KEY"] = project.findProperty("MAPS_API_KEY") ?: ""
-
-        // local.properties에서 읽어온 키를 빌드 시 사용할 수 있도록 변수로 만듦
-        buildConfigField("String", "MAPS_API_KEY", "\"${localProperties.getProperty("MAPS_API_KEY")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,44 +27,61 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     buildFeatures {
+        viewBinding = true
         buildConfig = true
     }
 }
 
 dependencies {
-
+    // AndroidX Core
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
 
-    // Google Maps SDK
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
-    implementation("com.google.android.gms:play-services-location:21.1.0")
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.ext.junit)
-    androidTestImplementation(libs.espresso.core)
-
     // Firebase BOM
-    implementation (platform("com.google.firebase:firebase-bom:34.6.0"))
-    implementation ("com.google.firebase:firebase-analytics")
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-storage")
+    implementation("com.google.firebase:firebase-database")  // Realtime Database
 
-    // Google ML kit - 이미지 라벨링
-    implementation("com.google.mlkit:image-labeling:17.0.8")
+    // Networking - Retrofit + OkHttp
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    // Glide - 이미지 로딩
+    // Barcode Scanner - ML Kit
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
+    // CameraX
+    val cameraxVersion = "1.4.0"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
+    // Gemini AI
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+
+    // Image Loading - Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
-    // ExifInterface - 사진 GPS 추출
-    implementation("androidx.exifinterface:exifinterface:1.3.7")
+    // Lottie Animation (몬스터/전투 애니메이션)
+    implementation("com.airbnb.android:lottie:6.4.0")
+
+    // Lifecycle
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-livedata:2.8.7")
+
+    // Testing
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
 }

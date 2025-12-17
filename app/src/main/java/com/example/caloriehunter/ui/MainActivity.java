@@ -1,0 +1,217 @@
+package com.example.caloriehunter.ui;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.caloriehunter.R;
+import com.example.caloriehunter.data.model.Monster;
+import com.example.caloriehunter.data.model.User;
+import com.example.caloriehunter.data.repository.FirebaseRepository;
+import com.example.caloriehunter.databinding.ActivityMainBinding;
+
+/**
+ * 메인 화면
+ * - 유저 정보 표시
+ * - 활성 몬스터 표시
+ * - 스캔/인벤토리 진입점
+ */
+public class MainActivity extends AppCompatActivity {
+
+    private ActivityMainBinding binding;
+    private FirebaseRepository firebaseRepository;
+    private User currentUser;
+    private Monster activeMonster;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        firebaseRepository = FirebaseRepository.getInstance();
+
+        setupClickListeners();
+        initializeUser();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 화면 복귀 시 데이터 갱신
+        if (currentUser != null) {
+            loadActiveMonster();
+        }
+    }
+
+    private void setupClickListeners() {
+        // 스캔 버튼
+        binding.fabScan.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ScanActivity.class);
+            startActivity(intent);
+        });
+
+        // 인벤토리 버튼
+        binding.btnInventory.setOnClickListener(v -> {
+            Intent intent = new Intent(this, InventoryActivity.class);
+            startActivity(intent);
+        });
+
+        // 전투 버튼
+        binding.btnBattle.setOnClickListener(v -> {
+            if (activeMonster != null) {
+                Intent intent = new Intent(this, BattleActivity.class);
+                intent.putExtra("monster_id", activeMonster.getId());
+                startActivity(intent);
+            }
+        });
+    }
+
+    private void initializeUser() {
+        showLoading(true);
+
+        String userId = firebaseRepository.getCurrentUserId();
+
+        if (userId != null) {
+            // 기존 로그인 유저
+            loadUserData(userId);
+        } else {
+            // 익명 로그인
+            firebaseRepository.signInAnonymously(new FirebaseRepository.AuthCallback() {
+                @Override
+                public void onSuccess(String userId) {
+                    createNewUser(userId);
+                }
+
+                @Override
+                public void onError(String message) {
+                    showLoading(false);
+                    Toast.makeText(MainActivity.this, "로그인 실패: " + message, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    private void createNewUser(String userId) {
+        String nickname = "헌터" + userId.substring(0, 4).toUpperCase();
+
+        firebaseRepository.getOrCreateUser(userId, nickname, new FirebaseRepository.UserCallback() {
+            @Override
+            public void onSuccess(User user) {
+                currentUser = user;
+                runOnUiThread(() -> {
+                    updateUserUI();
+                    loadActiveMonster();
+                    showLoading(false);
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    Toast.makeText(MainActivity.this, "유저 생성 실패: " + message, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void loadUserData(String userId) {
+        firebaseRepository.getOrCreateUser(userId, "", new FirebaseRepository.UserCallback() {
+            @Override
+            public void onSuccess(User user) {
+                currentUser = user;
+                runOnUiThread(() -> {
+                    updateUserUI();
+                    loadActiveMonster();
+                    showLoading(false);
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    Toast.makeText(MainActivity.this, "데이터 로드 실패: " + message, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void loadActiveMonster() {
+        String userId = firebaseRepository.getCurrentUserId();
+        if (userId == null) return;
+
+        firebaseRepository.getActiveMonster(userId, new FirebaseRepository.MonsterCallback() {
+            @Override
+            public void onSuccess(Monster monster) {
+                activeMonster = monster;
+                runOnUiThread(() -> updateMonsterUI());
+            }
+
+            @Override
+            public void onError(String message) {
+                activeMonster = null;
+                runOnUiThread(() -> showEmptyState());
+            }
+        });
+    }
+
+    private void updateUserUI() {
+        if (currentUser == null) return;
+
+        binding.tvLevel.setText(String.valueOf(currentUser.getLevel()));
+        binding.tvNickname.setText(currentUser.getNickname());
+
+        // HP 바
+        int hpPercent = (int) ((float) currentUser.getHp() / currentUser.getMaxHp() * 100);
+        binding.progressHp.setProgress(hpPercent);
+
+        // EXP 바
+        int expPercent = (int) ((float) currentUser.getExp() / currentUser.getExpToNextLevel() * 100);
+        binding.progressExp.setProgress(expPercent);
+    }
+
+    private void updateMonsterUI() {
+        if (activeMonster == null) {
+            showEmptyState();
+            return;
+        }
+
+        // 빈 상태 숨기고 몬스터 표시
+        binding.emptyState.setVisibility(View.GONE);
+        binding.monsterState.setVisibility(View.VISIBLE);
+
+        // 티어
+        binding.tvMonsterTier.setText(activeMonster.getTier().toUpperCase());
+        binding.tvMonsterTier.setTextColor(android.graphics.Color.parseColor(activeMonster.getTierColor()));
+
+        // 이름
+        binding.tvMonsterName.setText(activeMonster.getName());
+
+        // 이모지
+        binding.tvMonsterEmoji.setText(activeMonster.getElementEmoji());
+
+        // HP
+        binding.tvMonsterHp.setText(activeMonster.getHp() + " / " + activeMonster.getMaxHp());
+        int hpPercent = (int) ((float) activeMonster.getHp() / activeMonster.getMaxHp() * 100);
+        binding.progressMonsterHp.setProgress(hpPercent);
+
+        // 스탯
+        binding.tvMonsterDef.setText(String.valueOf(activeMonster.getDefense()));
+        binding.tvMonsterAtk.setText(String.valueOf(activeMonster.getAttack()));
+        binding.tvMonsterPsn.setText(String.valueOf(activeMonster.getPoisonDamage()));
+    }
+
+    private void showEmptyState() {
+        binding.emptyState.setVisibility(View.VISIBLE);
+        binding.monsterState.setVisibility(View.GONE);
+    }
+
+    private void showLoading(boolean show) {
+        binding.loadingOverlay.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+}

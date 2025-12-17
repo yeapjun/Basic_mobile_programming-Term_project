@@ -1,37 +1,358 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="@color/background_dark"
+    tools:context=".ui.MainActivity">
 
-    <!-- 전체화면 Google Map Fragment -->
-    <fragment
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+    <!-- 상단 유저 정보 바 -->
+    <LinearLayout
+        android:id="@+id/userInfoBar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <!-- 사진 추가 버튼 (FAB) -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add_photo"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:contentDescription="사진 추가"
-        android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@color/design_default_color_primary"
-        app:tint="@android:color/white" />
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="@color/surface_dark"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <!-- 로딩 인디케이터 -->
-    <ProgressBar
-        android:id="@+id/progress_bar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="gone" />
+        <!-- 레벨 뱃지 -->
+        <TextView
+            android:id="@+id/tvLevel"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_level_badge"
+            android:gravity="center"
+            android:text="1"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <!-- 닉네임 -->
+            <TextView
+                android:id="@+id/tvNickname"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="칼로리헌터"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- HP 바 -->
+            <ProgressBar
+                android:id="@+id/progressHp"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_marginTop="4dp"
+                android:max="100"
+                android:progress="100"
+                android:progressDrawable="@drawable/progress_hp" />
+
+            <!-- EXP 바 -->
+            <ProgressBar
+                android:id="@+id/progressExp"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_marginTop="4dp"
+                android:max="100"
+                android:progress="35"
+                android:progressDrawable="@drawable/progress_exp" />
+
+        </LinearLayout>
+
+        <!-- 인벤토리 버튼 -->
+        <ImageButton
+            android:id="@+id/btnInventory"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_inventory"
+            android:contentDescription="인벤토리"
+            app:tint="@color/white" />
+
+    </LinearLayout>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <FrameLayout
+        android:id="@+id/contentArea"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/userInfoBar"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav">
+
+        <!-- 몬스터 없을 때 빈 상태 -->
+        <LinearLayout
+            android:id="@+id/emptyState"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="visible">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍔"
+                android:textSize="80sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="음식을 스캔하세요!"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="나쁜 음식은 몬스터가 되고\n좋은 음식은 무기가 됩니다"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <!-- 활성 몬스터가 있을 때 -->
+        <LinearLayout
+            android:id="@+id/monsterState"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone"
+            android:padding="24dp">
+
+            <!-- 몬스터 티어/이름 -->
+            <TextView
+                android:id="@+id/tvMonsterTier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EPIC"
+                android:textColor="@color/tier_epic"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.2" />
+
+            <TextView
+                android:id="@+id/tvMonsterName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="분노한 콜라 슬라임"
+                android:textColor="@color/white"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp" />
+
+            <!-- 몬스터 이모지/이미지 -->
+            <TextView
+                android:id="@+id/tvMonsterEmoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍭"
+                android:textSize="120sp"
+                android:layout_marginTop="24dp" />
+
+            <!-- HP 바 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="HP"
+                        android:textColor="@color/hp_red"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvMonsterHp"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="54 / 54"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:gravity="end" />
+
+                </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/progressMonsterHp"
+                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="16dp"
+                    android:layout_marginTop="4dp"
+                    android:max="100"
+                    android:progress="100"
+                    android:progressDrawable="@drawable/progress_monster_hp" />
+
+            </LinearLayout>
+
+            <!-- 몬스터 스탯 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                android:gravity="center">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🛡️ DEF"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvMonsterDef"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="12"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚔️ ATK"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvMonsterAtk"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="☠️ PSN"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvMonsterPsn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- 전투 버튼 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBattle"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="32dp"
+                android:text="⚔️ 전투 시작"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/primary"
+                app:cornerRadius="28dp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <!-- 하단 네비게이션 -->
+    <LinearLayout
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:orientation="horizontal"
+        android:background="@color/surface_dark"
+        android:paddingHorizontal="24dp"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- 스캔 버튼 -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabScan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_scan"
+            android:contentDescription="스캔"
+            app:backgroundTint="@color/primary"
+            app:tint="@color/white"
+            app:fabSize="normal"
+            app:elevation="8dp" />
+
+    </LinearLayout>
+
+    <!-- 로딩 오버레이 -->
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

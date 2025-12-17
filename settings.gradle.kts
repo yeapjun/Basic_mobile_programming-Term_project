@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AITravelFootprints"
-include (":app")
+rootProject.name = "CalorieHunter"
+include(":app")
