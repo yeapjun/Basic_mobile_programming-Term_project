@@ -30,6 +30,11 @@ public class User {
     // 현재 활성 몬스터 ID
     private String activeMonsterld;
 
+    // 장착 아이템
+    private String equippedWeaponId;
+    private String equippedWeaponName;
+    private int equippedWeaponPower;
+
     // 메타데이터
     private long createdAt;
     private long lastLoginAt;
@@ -109,6 +114,9 @@ public class User {
         result.put("healthyFoodCount", healthyFoodCount);
         result.put("unhealthyFoodCount", unhealthyFoodCount);
         result.put("activeMonsterId", activeMonsterld);
+        result.put("equippedWeaponId", equippedWeaponId);
+        result.put("equippedWeaponName", equippedWeaponName);
+        result.put("equippedWeaponPower", equippedWeaponPower);
         result.put("createdAt", createdAt);
         result.put("lastLoginAt", lastLoginAt);
         return result;
@@ -156,4 +164,38 @@ public class User {
 
     public long getLastLoginAt() { return lastLoginAt; }
     public void setLastLoginAt(long lastLoginAt) { this.lastLoginAt = lastLoginAt; }
+
+    public String getEquippedWeaponId() { return equippedWeaponId; }
+    public void setEquippedWeaponId(String equippedWeaponId) { this.equippedWeaponId = equippedWeaponId; }
+
+    public String getEquippedWeaponName() { return equippedWeaponName; }
+    public void setEquippedWeaponName(String equippedWeaponName) { this.equippedWeaponName = equippedWeaponName; }
+
+    public int getEquippedWeaponPower() { return equippedWeaponPower; }
+    public void setEquippedWeaponPower(int equippedWeaponPower) { this.equippedWeaponPower = equippedWeaponPower; }
+
+    // 무기 장착
+    @Exclude
+    public void equipWeapon(Item weapon) {
+        if (weapon != null && weapon.getType() == Item.ItemType.WEAPON) {
+            this.equippedWeaponId = weapon.getId();
+            this.equippedWeaponName = weapon.getName();
+            this.equippedWeaponPower = weapon.getAttackPower();
+        }
+    }
+
+    // 무기 해제
+    @Exclude
+    public void unequipWeapon() {
+        this.equippedWeaponId = null;
+        this.equippedWeaponName = null;
+        this.equippedWeaponPower = 0;
+    }
+
+    // 총 공격력 계산
+    @Exclude
+    public int getTotalAttackPower() {
+        int baseAttack = 10 + level * 2;
+        return baseAttack + equippedWeaponPower;
+    }
 }

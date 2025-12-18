@@ -12,6 +12,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.caloriehunter.R;
+import com.example.caloriehunter.data.model.BattleLog;
 import com.example.caloriehunter.data.model.Item;
 import com.example.caloriehunter.data.model.Monster;
 import com.example.caloriehunter.data.model.User;
@@ -80,6 +81,8 @@ public class BattleActivity extends AppCompatActivity {
         });
 
         binding.btnResultConfirm.setOnClickListener(v -> {
+            // 메인화면으로 돌아가기 (결과 전달)
+            setResult(RESULT_OK);
             finish();
         });
     }
@@ -197,8 +200,8 @@ public class BattleActivity extends AppCompatActivity {
     private void playerAttack() {
         setActionsEnabled(false);
 
-        // 기본 공격력 + 무기 보너스 (MVP에서는 기본값 사용)
-        int baseDamage = 10 + user.getLevel() * 2;
+        // 기본 공격력 + 장착 무기 보너스
+        int baseDamage = user.getTotalAttackPower();
         int finalDamage = Math.max(1, baseDamage - monster.getDefense() / 2);
 
         // 크리티컬 확률 (10%)
@@ -313,7 +316,17 @@ public class BattleActivity extends AppCompatActivity {
                 // 경험치 추가
                 user.addExp(expGain);
                 user.setTotalDamageDealt(user.getTotalDamageDealt() + monster.getMaxHp());
+                user.setTotalMonstersKilled(user.getTotalMonstersKilled() + 1);
                 firebaseRepository.updateUser(user, new FirebaseRepository.SimpleCallback() {
+                    @Override
+                    public void onSuccess() {}
+                    @Override
+                    public void onError(String message) {}
+                });
+
+                // 전투 기록 저장
+                BattleLog log = BattleLog.createVictoryLog(userId, monster, expGain);
+                firebaseRepository.saveBattleLog(log, new FirebaseRepository.SimpleCallback() {
                     @Override
                     public void onSuccess() {}
                     @Override

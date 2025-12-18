@@ -1,0 +1,191 @@
+package com.example.caloriehunter.api;
+
+import android.graphics.Bitmap;
+import android.util.Log;
+
+import com.example.caloriehunter.BuildConfig;
+import com.example.caloriehunter.data.model.NutritionData;
+import com.google.ai.client.generativeai.GenerativeModel;
+import com.google.ai.client.generativeai.java.GenerativeModelFutures;
+import com.google.ai.client.generativeai.type.Content;
+import com.google.ai.client.generativeai.type.GenerateContentResponse;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
+import org.json.JSONObject;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+/**
+ * Gemini 공식 SDK를 사용한 음식 분석 서비스
+ */
+public class GeminiService {
+    private static final String TAG = "GeminiService";
+    // ★ 중요: 모델 이름을 정확히 'gemini-1.5-flash'로 설정
+    private static final String MODEL_NAME = "gemini-1.5-flash";
+
+    private static GeminiService instance;
+    private final GenerativeModelFutures model;
+
+    // 콜백 인터페이스
+    public interface GeminiCallback {
+        void onSuccess(NutritionData nutritionData);
+        void onError(String error);
+    }
+
+    private GeminiService() {
+        // ★ 중요: 여기서 SDK 모델을 생성합니다. (OkHttp 필요 없음)
+        GenerativeModel gm = new GenerativeModel(MODEL_NAME, BuildConfig.GEMINI_API_KEY);
+        this.model = GenerativeModelFutures.from(gm);
+    }
+
+    public static synchronized GeminiService getInstance() {
+        if (instance == null) {
+            instance = new GeminiService();
+        }
+        return instance;
+    }
+
+    /**
+     * 음식 이미지를 분석하여 영양 정보 추정
+     */
+    public void analyzeFoodImage(Bitmap foodImage, GeminiCallback callback) {
+        String prompt = buildAnalysisPrompt();
+
+        // SDK를 사용하면 이미지를 Base64로 바꿀 필요 없이 바로 넣으면 됩니다!
+        Content content = new Content.Builder()
+                .addImage(foodImage) // 비트맵 직접 입력
+                .addText(prompt)
+                .build();
+
+        // 요청 전송
+        ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
+        handleResponse(response, callback);
+    }
+
+    /**
+     * 음식 이름으로 영양 정보 추정 (텍스트 기반)
+     */
+    public void analyzeFoodByName(String foodName, GeminiCallback callback) {
+        String prompt = buildTextAnalysisPrompt(foodName);
+
+        // 텍스트 요청 생성
+        Content content = new Content.Builder()
+                .addText(prompt)
+                .build();
+
+        // 요청 전송
+        ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
+        handleResponse(response, callback);
+    }
+
+    // 결과 처리 공통 함수
+    private void handleResponse(ListenableFuture<GenerateContentResponse> response, GeminiCallback callback) {
+        Executor executor = Executors.newSingleThreadExecutor();
+
+        Futures.addCallback(response, new FutureCallback<GenerateContentResponse>() {
+            @Override
+            public void onSuccess(GenerateContentResponse result) {
+                try {
+                    String resultText = result.getText();
+                    Log.d(TAG, "Gemini Response: " + resultText);
+
+                    if (resultText == null || resultText.isEmpty()) {
+                        callback.onError("응답 내용이 없습니다.");
+                        return;
+                    }
+
+                    NutritionData data = parseGeminiResponse(resultText);
+                    callback.onSuccess(data);
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Parsing error", e);
+                    callback.onError("분석 결과를 처리하는 중 오류가 발생했습니다: " + e.getMessage());
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Log.e(TAG, "API Error", t);
+                // 여기서 404 등의 에러 메시지가 전달됩니다.
+                callback.onError("Gemini AI 오류: " + t.getMessage());
+            }
+        }, executor);
+    }
+
+    // --- 아래는 프롬프트 및 파싱 로직 (기존 유지) ---
+
+    private String buildAnalysisPrompt() {
+        return "이 음식 이미지를 분석해주세요. 다음 JSON 형식으로만 응답해주세요:\n\n" +
+                "{\n" +
+                "  \"foodName\": \"음식 이름 (한글)\",\n" +
+                "  \"calories\": 칼로리 (kcal, 숫자만),\n" +
+                "  \"sugar\": 당류 (g, 숫자만),\n" +
+                "  \"sodium\": 나트륨 (mg, 숫자만),\n" +
+                "  \"saturatedFat\": 포화지방 (g, 숫자만),\n" +
+                "  \"transFat\": 트랜스지방 (g, 숫자만),\n" +
+                "  \"protein\": 단백질 (g, 숫자만),\n" +
+                "  \"fiber\": 식이섬유 (g, 숫자만)\n" +
+                "}\n\n" +
+                "반드시 JSON 형식으로만 응답하세요. 마크다운 태그 없이 순수 JSON만 주세요.";
+    }
+
+    private String buildTextAnalysisPrompt(String foodName) {
+        return "\"" + foodName + "\"의 일반적인 1인분 영양 정보를 추정해주세요. 다음 JSON 형식으로만 응답해주세요:\n\n" +
+                "{\n" +
+                "  \"foodName\": \"" + foodName + "\",\n" +
+                "  \"calories\": 칼로리 (kcal, 숫자만),\n" +
+                "  \"sugar\": 당류 (g, 숫자만),\n" +
+                "  \"sodium\": 나트륨 (mg, 숫자만),\n" +
+                "  \"saturatedFat\": 포화지방 (g, 숫자만),\n" +
+                "  \"transFat\": 트랜스지방 (g, 숫자만),\n" +
+                "  \"protein\": 단백질 (g, 숫자만),\n" +
+                "  \"fiber\": 식이섬유 (g, 숫자만)\n" +
+                "}\n\n" +
+                "반드시 JSON 형식으로만 응답하세요. 마크다운 태그 없이 순수 JSON만 주세요.";
+    }
+
+    private NutritionData parseGeminiResponse(String responseText) throws Exception {
+        String jsonStr = extractJson(responseText);
+        JSONObject json = new JSONObject(jsonStr);
+
+        NutritionData data = new NutritionData();
+        data.setFoodName(json.optString("foodName", "알 수 없는 음식"));
+        data.setCalories((float) json.optDouble("calories", 0));
+        data.setSugar((float) json.optDouble("sugar", 0));
+        data.setSodium((float) json.optDouble("sodium", 0));
+        data.setSaturatedFat((float) json.optDouble("saturatedFat", 0));
+        data.setTransFat((float) json.optDouble("transFat", 0));
+        data.setProtein((float) json.optDouble("protein", 0));
+        data.setFiber((float) json.optDouble("fiber", 0));
+        data.setSource("Gemini AI");
+        data.setConfidence(0.8f);
+
+        return data;
+    }
+
+    private String extractJson(String text) {
+        if (text.contains("```json")) {
+            int start = text.indexOf("```json") + 7;
+            int end = text.indexOf("```", start);
+            if (end > start) {
+                return text.substring(start, end).trim();
+            }
+        }
+        if (text.contains("```")) {
+            int start = text.indexOf("```") + 3;
+            int end = text.indexOf("```", start);
+            if (end > start) {
+                return text.substring(start, end).trim();
+            }
+        }
+        int start = text.indexOf("{");
+        int end = text.lastIndexOf("}");
+        if (start >= 0 && end > start) {
+            return text.substring(start, end + 1);
+        }
+        return text;
+    }
+}

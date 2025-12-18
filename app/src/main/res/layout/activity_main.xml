@@ -85,12 +85,51 @@
 
     </LinearLayout>
 
+    <!-- 장착 무기 정보 -->
+    <LinearLayout
+        android:id="@+id/weaponInfoBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingVertical="8dp"
+        android:paddingHorizontal="16dp"
+        android:background="@color/surface_dark"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toBottomOf="@id/userInfoBar">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚔️"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvEquippedWeapon"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="장착된 무기 없음"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvTotalAttack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ATK 12"
+            android:textColor="@color/primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
     <!-- 메인 컨텐츠 영역 -->
     <FrameLayout
         android:id="@+id/contentArea"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/userInfoBar"
+        app:layout_constraintTop_toBottomOf="@id/weaponInfoBar"
         app:layout_constraintBottom_toTopOf="@id/bottomNav">
 
         <!-- 몬스터 없을 때 빈 상태 -->

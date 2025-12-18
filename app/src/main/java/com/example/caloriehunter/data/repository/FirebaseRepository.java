@@ -4,6 +4,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.caloriehunter.data.model.BattleLog;
 import com.example.caloriehunter.data.model.Item;
 import com.example.caloriehunter.data.model.Monster;
 import com.example.caloriehunter.data.model.User;
@@ -188,10 +189,12 @@ public class FirebaseRepository {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                                         Monster monster = snapshot.getValue(Monster.class);
-                                        if (monster != null) {
+                                        if (monster != null && !"defeated".equals(monster.getStatus())) {
                                             callback.onSuccess(monster);
                                         } else {
-                                            callback.onError("몬스터 데이터 없음");
+                                            // 처치된 몬스터거나 데이터 없음 - activeMonsterId 제거
+                                            database.child("users").child(userId).child("activeMonsterId").removeValue();
+                                            callback.onError("활성 몬스터 없음");
                                         }
                                     }
 
@@ -353,5 +356,55 @@ public class FirebaseRepository {
                     .addOnSuccessListener(aVoid -> callback.onSuccess())
                     .addOnFailureListener(e -> callback.onError(e.getMessage()));
         }
+    }
+
+    // ========== 전투 기록 ==========
+
+    /**
+     * 전투 기록 콜백
+     */
+    public interface BattleLogsCallback {
+        void onSuccess(List<BattleLog> logs);
+        void onError(String message);
+    }
+
+    /**
+     * 전투 기록 저장
+     */
+    public void saveBattleLog(BattleLog log, SimpleCallback callback) {
+        database.child("users").child(log.getOderId())
+                .child("battleLogs").child(log.getId())
+                .setValue(log.toMap())
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    /**
+     * 전투 기록 조회 (최근 50개)
+     */
+    public void getBattleLogs(String userId, BattleLogsCallback callback) {
+        database.child("users").child(userId).child("battleLogs")
+                .orderByChild("timestamp")
+                .limitToLast(50)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<BattleLog> logs = new ArrayList<>();
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            BattleLog log = child.getValue(BattleLog.class);
+                            if (log != null) {
+                                logs.add(log);
+                            }
+                        }
+                        // 최신순 정렬
+                        logs.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+                        callback.onSuccess(logs);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
     }
 }

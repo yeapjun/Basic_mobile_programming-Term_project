@@ -7,6 +7,8 @@ import android.os.Looper;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.caloriehunter.R;
@@ -31,6 +33,23 @@ public class MainActivity extends AppCompatActivity {
     private Monster activeMonster;
     private Handler timeoutHandler;
     private boolean isLoadingComplete = false;
+
+    // 배틀 결과 처리
+    private final ActivityResultLauncher<Intent> battleLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                // 배틀 종료 후 데이터 새로고침
+                String userId = firebaseRepository.getCurrentUserId();
+                if (userId != null) {
+                    // 승리한 경우 메시지 표시
+                    if (result.getResultCode() == RESULT_OK) {
+                        Toast.makeText(this, "🎉 몬스터를 처치했습니다!", Toast.LENGTH_SHORT).show();
+                    }
+                    // 유저 정보 & 몬스터 정보 갱신
+                    loadUserData(userId);
+                }
+            }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
             if (activeMonster != null) {
                 Intent intent = new Intent(this, BattleActivity.class);
                 intent.putExtra("monster_id", activeMonster.getId());
-                startActivity(intent);
+                battleLauncher.launch(intent);  // 결과를 받아서 처리
             }
         });
     }
@@ -204,6 +223,18 @@ public class MainActivity extends AppCompatActivity {
         // EXP 바
         int expPercent = (int) ((float) currentUser.getExp() / currentUser.getExpToNextLevel() * 100);
         binding.progressExp.setProgress(expPercent);
+
+        // 장착 무기 정보
+        if (currentUser.getEquippedWeaponName() != null && !currentUser.getEquippedWeaponName().isEmpty()) {
+            binding.tvEquippedWeapon.setText(currentUser.getEquippedWeaponName() + " (+" + currentUser.getEquippedWeaponPower() + ")");
+            binding.tvEquippedWeapon.setTextColor(getColor(R.color.primary));
+        } else {
+            binding.tvEquippedWeapon.setText("장착된 무기 없음");
+            binding.tvEquippedWeapon.setTextColor(getColor(R.color.text_secondary));
+        }
+
+        // 총 공격력
+        binding.tvTotalAttack.setText("ATK " + currentUser.getTotalAttackPower());
     }
 
     private void updateMonsterUI() {

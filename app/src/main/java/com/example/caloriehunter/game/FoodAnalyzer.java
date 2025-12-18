@@ -33,8 +33,8 @@ public class FoodAnalyzer {
     private static final float SODIUM_TO_DEFENSE = 0.015f;
     private static final float SAT_FAT_TO_ATTACK = 2.0f;
     private static final float TRANS_FAT_TO_POISON = 10.0f;
-    private static final float PROTEIN_TO_ATTACK = 1.5f;
-    private static final float FIBER_TO_HEAL = 3.0f;
+    private static final float PROTEIN_TO_ATTACK = 2.0f;
+    private static final float FIBER_TO_HEAL = 8.0f;
 
     /**
      * 분석 결과를 담는 클래스
@@ -119,13 +119,29 @@ public class FoodAnalyzer {
 
     /**
      * 건강 점수 계산 (높을수록 건강)
+     * 불건강 요소가 있으면 단백질 점수 감소
      */
     private float calculateHealthScore(NutritionData food) {
         float score = 0;
 
-        // 단백질 점수
+        // 단백질 점수 (불건강 요소가 있으면 감소)
         if (food.getProtein() > PROTEIN_THRESHOLD) {
-            score += (food.getProtein() - PROTEIN_THRESHOLD) * 2.5f;
+            float proteinScore = (food.getProtein() - PROTEIN_THRESHOLD) * 2.5f;
+
+            // 포화지방이 높으면 단백질 점수 50% 감소
+            if (food.getSaturatedFat() > SAT_FAT_THRESHOLD) {
+                proteinScore *= 0.5f;
+            }
+            // 트랜스지방이 있으면 단백질 점수 추가 50% 감소
+            if (food.getTransFat() > TRANS_FAT_THRESHOLD) {
+                proteinScore *= 0.5f;
+            }
+            // 나트륨이 높으면 단백질 점수 30% 감소
+            if (food.getSodium() > SODIUM_THRESHOLD) {
+                proteinScore *= 0.7f;
+            }
+
+            score += proteinScore;
         }
 
         // 식이섬유 점수
@@ -143,9 +159,11 @@ public class FoodAnalyzer {
             score += 10;
         }
 
-        // 영양밀도 보너스
-        float nutritionDensity = calculateNutritionDensity(food);
-        score += nutritionDensity * 2.0f;
+        // 영양밀도 보너스 (불건강 요소가 있으면 무효화)
+        if (food.getSaturatedFat() <= SAT_FAT_THRESHOLD && food.getTransFat() <= TRANS_FAT_THRESHOLD) {
+            float nutritionDensity = calculateNutritionDensity(food);
+            score += nutritionDensity * 2.0f;
+        }
 
         return score;
     }
@@ -306,12 +324,12 @@ public class FoodAnalyzer {
             item.setType(Item.ItemType.WEAPON);
             item.setName(food.getFoodName() + " 소드");
             int attackPower = Math.round(food.getProtein() * PROTEIN_TO_ATTACK);
-            item.setAttackPower(Math.max(5, Math.min(attackPower, 100)));
+            item.setAttackPower(Math.max(10, Math.min(attackPower, 150)));
         } else {
             item.setType(Item.ItemType.POTION);
             item.setName(food.getFoodName() + " 포션");
             int healAmount = Math.round(food.getFiber() * FIBER_TO_HEAL);
-            item.setHealAmount(Math.max(5, Math.min(healAmount, 50)));
+            item.setHealAmount(Math.max(10, Math.min(healAmount, 100)));
         }
 
         // 등급 결정

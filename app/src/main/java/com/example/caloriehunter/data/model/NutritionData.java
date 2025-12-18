@@ -26,6 +26,7 @@ public class NutritionData {
     // 데이터 소스
     private String source;       // "openfoodfacts", "foodsafety", "gemini"
     private float confidence;    // 신뢰도 (0.0 ~ 1.0)
+    private String servingSize;  // 1회 제공량 (예: "100g", "1개")
 
     // 기본 생성자
     public NutritionData() {}
@@ -48,6 +49,7 @@ public class NutritionData {
         public Builder sodium(float val) { data.sodium = val; return this; }
         public Builder source(String src) { data.source = src; return this; }
         public Builder confidence(float conf) { data.confidence = conf; return this; }
+        public Builder servingSize(String size) { data.servingSize = size; return this; }
 
         public NutritionData build() { return data; }
     }
@@ -67,6 +69,7 @@ public class NutritionData {
     public float getSodium() { return sodium; }
     public String getSource() { return source; }
     public float getConfidence() { return confidence; }
+    public String getServingSize() { return servingSize; }
 
     // Setters
     public void setFoodName(String foodName) { this.foodName = foodName; }
@@ -83,4 +86,5 @@ public class NutritionData {
     public void setSodium(float sodium) { this.sodium = sodium; }
     public void setSource(String source) { this.source = source; }
     public void setConfidence(float confidence) { this.confidence = confidence; }
+    public void setServingSize(String servingSize) { this.servingSize = servingSize; }
 }

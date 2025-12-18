@@ -31,6 +31,10 @@ public class Item {
     private int buffDuration;   // 버프 지속 시간 (초)
     private int buffPower;      // 버프 효과량
 
+    // 무기 내구도
+    private int durability;     // 현재 내구도
+    private int maxDurability;  // 최대 내구도
+
     // 등급 및 수량
     private String rarity;      // common, rare, epic, legendary
     private int quantity;
@@ -57,6 +61,8 @@ public class Item {
         result.put("healAmount", healAmount);
         result.put("buffDuration", buffDuration);
         result.put("buffPower", buffPower);
+        result.put("durability", durability);
+        result.put("maxDurability", maxDurability);
         result.put("rarity", rarity);
         result.put("quantity", quantity);
         result.put("obtainedAt", obtainedAt);
@@ -125,4 +131,24 @@ public class Item {
 
     public long getObtainedAt() { return obtainedAt; }
     public void setObtainedAt(long obtainedAt) { this.obtainedAt = obtainedAt; }
+
+    public int getDurability() { return durability; }
+    public void setDurability(int durability) { this.durability = durability; }
+
+    public int getMaxDurability() { return maxDurability; }
+    public void setMaxDurability(int maxDurability) { this.maxDurability = maxDurability; }
+
+    // 내구도 감소
+    @Exclude
+    public boolean reduceDurability(int amount) {
+        this.durability = Math.max(0, this.durability - amount);
+        return this.durability <= 0; // true면 파괴됨
+    }
+
+    // 내구도 퍼센트
+    @Exclude
+    public int getDurabilityPercent() {
+        if (maxDurability <= 0) return 100;
+        return (int) ((float) durability / maxDurability * 100);
+    }
 }

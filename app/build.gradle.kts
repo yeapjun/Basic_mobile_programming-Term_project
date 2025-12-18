@@ -27,7 +27,12 @@ android {
         }
 
         // 식약처 키 등록
-        buildConfigField("String", "MFDS_API_KEY", properties.getProperty("MFDS_API_KEY", ""))
+        val mfdsKey = properties.getProperty("MFDS_API_KEY", "")
+        buildConfigField("String", "MFDS_API_KEY", "\"$mfdsKey\"")
+
+        // Gemini API 키 등록
+        val geminiKey = properties.getProperty("GEMINI_API_KEY", "")
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     }
 
     // [3] BuildConfig 기능 켜기 (이미 있다면 패스)
@@ -84,8 +89,11 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
-    // Gemini AI
+    // Gemini AI (최신 버전)
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+
+    // Guava (Gemini SDK에서 사용하는 ListenableFuture 지원)
+    implementation("com.google.guava:guava:32.1.3-android")
 
     // Image Loading - Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
