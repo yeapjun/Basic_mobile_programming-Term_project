@@ -4,9 +4,12 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.caloriehunter.data.model.AttendanceReward;
 import com.example.caloriehunter.data.model.BattleLog;
+import com.example.caloriehunter.data.model.DailyQuest;
 import com.example.caloriehunter.data.model.Item;
 import com.example.caloriehunter.data.model.Monster;
+import com.example.caloriehunter.data.model.NutritionRecord;
 import com.example.caloriehunter.data.model.User;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -326,6 +329,65 @@ public class FirebaseRepository {
     }
 
     /**
+     * 특정 무기 조회
+     */
+    public void getWeapon(String userId, String weaponId, ItemCallback callback) {
+        database.child("users").child(userId).child("inventory/weapons").child(weaponId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Item item = snapshot.getValue(Item.class);
+                        if (item != null) {
+                            item.setType(Item.ItemType.WEAPON);
+                            callback.onSuccess(item);
+                        } else {
+                            callback.onError("무기를 찾을 수 없습니다");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * 무기 내구도 업데이트
+     */
+    public void updateWeaponDurability(String userId, String weaponId, int durability, SimpleCallback callback) {
+        database.child("users").child(userId).child("inventory/weapons").child(weaponId)
+                .child("durability").setValue(durability)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    /**
+     * 무기 삭제 (파괴)
+     */
+    public void deleteWeapon(String userId, String weaponId, SimpleCallback callback) {
+        database.child("users").child(userId).child("inventory/weapons").child(weaponId)
+                .removeValue()
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    /**
+     * 유저의 장착 무기 해제
+     */
+    public void unequipWeapon(String userId, SimpleCallback callback) {
+        // 여러 필드를 한 번에 업데이트 (원자적 연산)
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("equippedWeaponId", null);
+        updates.put("equippedWeaponName", null);
+        updates.put("equippedWeaponPower", 0);
+
+        database.child("users").child(userId).updateChildren(updates)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    /**
      * 아이템 사용 (수량 감소)
      */
     public void useItem(String userId, Item item, SimpleCallback callback) {
@@ -372,7 +434,7 @@ public class FirebaseRepository {
      * 전투 기록 저장
      */
     public void saveBattleLog(BattleLog log, SimpleCallback callback) {
-        database.child("users").child(log.getOderId())
+        database.child("users").child(log.getOwnerId())
                 .child("battleLogs").child(log.getId())
                 .setValue(log.toMap())
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
@@ -399,6 +461,414 @@ public class FirebaseRepository {
                         // 최신순 정렬
                         logs.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
                         callback.onSuccess(logs);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    // ========== 일일 퀘스트 ==========
+
+    /**
+     * 퀘스트 목록 콜백
+     */
+    public interface QuestsCallback {
+        void onSuccess(List<DailyQuest> quests);
+        void onError(String message);
+    }
+
+    /**
+     * 오늘의 일일 퀘스트 조회 (없으면 생성)
+     */
+    public void getTodayQuests(String userId, QuestsCallback callback) {
+        String today = DailyQuest.getTodayDateString();
+
+        database.child("users").child(userId).child("dailyQuests").child(today)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<DailyQuest> quests = new ArrayList<>();
+
+                        if (snapshot.exists() && snapshot.getChildrenCount() > 0) {
+                            // 기존 퀘스트 로드
+                            for (DataSnapshot child : snapshot.getChildren()) {
+                                DailyQuest quest = child.getValue(DailyQuest.class);
+                                if (quest != null) {
+                                    quests.add(quest);
+                                }
+                            }
+                            callback.onSuccess(quests);
+                        } else {
+                            // 새 퀘스트 생성
+                            DailyQuest[] newQuests = DailyQuest.generateDailyQuests(userId);
+                            for (DailyQuest quest : newQuests) {
+                                database.child("users").child(userId)
+                                        .child("dailyQuests").child(today).child(quest.getId())
+                                        .setValue(quest.toMap());
+                                quests.add(quest);
+                            }
+                            callback.onSuccess(quests);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * 퀘스트 진행도 업데이트
+     */
+    public void updateQuestProgress(String userId, String questId, int progress, boolean completed, SimpleCallback callback) {
+        String today = DailyQuest.getTodayDateString();
+
+        DatabaseReference questRef = database.child("users").child(userId)
+                .child("dailyQuests").child(today).child(questId);
+
+        // 두 필드를 한 번에 업데이트 (원자적 연산)
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("currentProgress", progress);
+        updates.put("completed", completed);
+
+        questRef.updateChildren(updates)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    /**
+     * 퀘스트 보상 수령
+     */
+    public void claimQuestReward(String userId, DailyQuest quest, SimpleCallback callback) {
+        String today = DailyQuest.getTodayDateString();
+
+        database.child("users").child(userId).child("dailyQuests").child(today).child(quest.getId())
+                .child("rewardClaimed").setValue(true)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    /**
+     * 특정 타입의 퀘스트 진행 (스캔, 처치 등)
+     */
+    public void progressQuestByType(String userId, String questType, int amount, SimpleCallback callback) {
+        String today = DailyQuest.getTodayDateString();
+
+        database.child("users").child(userId).child("dailyQuests").child(today)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            DailyQuest quest = child.getValue(DailyQuest.class);
+                            if (quest != null && quest.getQuestType().equals(questType) && !quest.isCompleted()) {
+                                quest.addProgress(amount);
+                                updateQuestProgress(userId, quest.getId(), quest.getCurrentProgress(), quest.isCompleted(), callback);
+                                return;
+                            }
+                        }
+                        callback.onSuccess();  // 해당 타입 퀘스트 없음
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    // ========== 영양 기록 ==========
+
+    /**
+     * 영양 기록 콜백
+     */
+    public interface NutritionRecordsCallback {
+        void onSuccess(List<NutritionRecord> records);
+        void onError(String message);
+    }
+
+    /**
+     * 영양 기록 저장
+     */
+    public void saveNutritionRecord(NutritionRecord record, SimpleCallback callback) {
+        database.child("users").child(record.getOwnerId())
+                .child("nutritionRecords").child(record.getId())
+                .setValue(record.toMap())
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    /**
+     * 오늘의 영양 기록 조회
+     */
+    public void getTodayNutritionRecords(String userId, NutritionRecordsCallback callback) {
+        String today = NutritionRecord.getTodayDateString();
+
+        database.child("users").child(userId).child("nutritionRecords")
+                .orderByChild("date")
+                .equalTo(today)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<NutritionRecord> records = new ArrayList<>();
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            NutritionRecord record = child.getValue(NutritionRecord.class);
+                            if (record != null) {
+                                records.add(record);
+                            }
+                        }
+                        // 시간순 정렬
+                        records.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+                        callback.onSuccess(records);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * 최근 N일간 영양 기록 조회
+     */
+    public void getRecentNutritionRecords(String userId, int days, NutritionRecordsCallback callback) {
+        long startTime = System.currentTimeMillis() - (days * 24L * 60 * 60 * 1000);
+
+        database.child("users").child(userId).child("nutritionRecords")
+                .orderByChild("timestamp")
+                .startAt(startTime)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<NutritionRecord> records = new ArrayList<>();
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            NutritionRecord record = child.getValue(NutritionRecord.class);
+                            if (record != null) {
+                                records.add(record);
+                            }
+                        }
+                        // 시간순 정렬
+                        records.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+                        callback.onSuccess(records);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    // ========== 출석 보상 ==========
+
+    /**
+     * 출석 보상 콜백
+     */
+    public interface AttendanceCallback {
+        void onSuccess(AttendanceReward reward);
+        void onError(String message);
+    }
+
+    /**
+     * 출석 기록 목록 콜백
+     */
+    public interface AttendanceListCallback {
+        void onSuccess(List<AttendanceReward> rewards);
+        void onError(String message);
+    }
+
+    /**
+     * 오늘 출석 체크 여부 확인
+     */
+    public void getTodayAttendance(String userId, AttendanceCallback callback) {
+        String today = AttendanceReward.getTodayDateString();
+
+        database.child("users").child(userId).child("attendance").child(today)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            AttendanceReward reward = snapshot.getValue(AttendanceReward.class);
+                            callback.onSuccess(reward);
+                        } else {
+                            callback.onError("오늘 출석 기록 없음");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * 출석 체크 수행
+     */
+    public void checkAttendance(String userId, AttendanceCallback callback) {
+        String today = AttendanceReward.getTodayDateString();
+        String yesterday = AttendanceReward.getYesterdayDateString();
+
+        // 먼저 오늘 이미 출석했는지 확인
+        database.child("users").child(userId).child("attendance").child(today)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            // 이미 출석함
+                            AttendanceReward reward = snapshot.getValue(AttendanceReward.class);
+                            callback.onSuccess(reward);
+                            return;
+                        }
+
+                        // 어제 출석 기록 확인 (연속 출석 계산)
+                        database.child("users").child(userId).child("attendance").child(yesterday)
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot yesterdaySnapshot) {
+                                        int consecutiveDays = 1;
+                                        int totalDays = 1;
+
+                                        if (yesterdaySnapshot.exists()) {
+                                            AttendanceReward yesterdayReward = yesterdaySnapshot.getValue(AttendanceReward.class);
+                                            if (yesterdayReward != null) {
+                                                consecutiveDays = yesterdayReward.getConsecutiveDays() + 1;
+                                                totalDays = yesterdayReward.getTotalDays() + 1;
+                                            }
+                                        } else {
+                                            // 어제 출석 안함 - 연속 초기화, 총 일수는 조회 필요
+                                            consecutiveDays = 1;
+                                            // 간단하게 처리: 총 일수는 연속과 별개로 카운트
+                                        }
+
+                                        // 새 출석 보상 생성
+                                        AttendanceReward reward = AttendanceReward.createTodayReward(userId, consecutiveDays, totalDays);
+
+                                        // Firebase에 저장
+                                        database.child("users").child(userId).child("attendance").child(today)
+                                                .setValue(reward.toMap())
+                                                .addOnSuccessListener(aVoid -> {
+                                                    // 보상 지급
+                                                    applyAttendanceReward(userId, reward, callback);
+                                                })
+                                                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        callback.onError(error.getMessage());
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * 출석 보상 적용 (EXP 또는 포션 지급)
+     */
+    private void applyAttendanceReward(String userId, AttendanceReward reward, AttendanceCallback callback) {
+        if (AttendanceReward.REWARD_EXP.equals(reward.getRewardType())) {
+            // EXP 보상
+            database.child("users").child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    User user = snapshot.getValue(User.class);
+                    if (user != null) {
+                        user.addExp(reward.getRewardAmount());
+                        updateUser(user, new SimpleCallback() {
+                            @Override
+                            public void onSuccess() {
+                                callback.onSuccess(reward);
+                            }
+                            @Override
+                            public void onError(String message) {
+                                callback.onSuccess(reward);  // 보상 지급 실패해도 출석은 성공
+                            }
+                        });
+                    } else {
+                        callback.onSuccess(reward);
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    callback.onSuccess(reward);
+                }
+            });
+        } else if (AttendanceReward.REWARD_POTION.equals(reward.getRewardType())) {
+            // 포션 보상
+            for (int i = 0; i < reward.getRewardAmount(); i++) {
+                Item potion = Item.createAttendancePotion(userId);
+                saveItem(potion, new ItemCallback() {
+                    @Override
+                    public void onSuccess(Item item) {}
+                    @Override
+                    public void onError(String message) {}
+                });
+            }
+            callback.onSuccess(reward);
+        } else {
+            callback.onSuccess(reward);
+        }
+    }
+
+    /**
+     * 이번 주 출석 기록 조회
+     */
+    public void getWeeklyAttendance(String userId, AttendanceListCallback callback) {
+        List<String> weekDates = AttendanceReward.getThisWeekDates();
+        List<AttendanceReward> rewards = new ArrayList<>();
+
+        database.child("users").child(userId).child("attendance")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        for (String date : weekDates) {
+                            DataSnapshot dateSnapshot = snapshot.child(date);
+                            if (dateSnapshot.exists()) {
+                                AttendanceReward reward = dateSnapshot.getValue(AttendanceReward.class);
+                                if (reward != null) {
+                                    rewards.add(reward);
+                                }
+                            }
+                        }
+                        callback.onSuccess(rewards);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * 최근 출석 기록 조회 (연속 일수 확인용)
+     */
+    public void getLatestAttendance(String userId, AttendanceCallback callback) {
+        database.child("users").child(userId).child("attendance")
+                .orderByChild("claimedAt")
+                .limitToLast(1)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            AttendanceReward reward = child.getValue(AttendanceReward.class);
+                            if (reward != null) {
+                                callback.onSuccess(reward);
+                                return;
+                            }
+                        }
+                        callback.onError("출석 기록 없음");
                     }
 
                     @Override

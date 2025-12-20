@@ -5,25 +5,31 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="6dp"
-    app:cardBackgroundColor="@color/surface_dark"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    app:cardBackgroundColor="@color/card_background"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    android:foreground="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp"
+        android:padding="14dp"
         android:gravity="center">
 
-        <!-- 등급 표시 -->
+        <!-- 등급 뱃지 -->
         <TextView
             android:id="@+id/tvRarity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:background="@drawable/bg_stat_card"
             android:text="EPIC"
             android:textColor="@color/tier_epic"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textStyle="bold"
             android:letterSpacing="0.1" />
 
@@ -33,15 +39,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="⚔️"
-            android:textSize="40sp"
-            android:layout_marginTop="8dp" />
+            android:textSize="36sp"
+            android:layout_marginTop="10dp" />
 
         <!-- 아이템 이름 -->
         <TextView
             android:id="@+id/tvItemName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:text="닭가슴살 소드"
             android:textColor="@color/white"
             android:textSize="13sp"
@@ -61,6 +67,36 @@
             android:textSize="12sp"
             android:textStyle="bold" />
 
+        <!-- 내구도 (무기 전용) -->
+        <LinearLayout
+            android:id="@+id/durabilityLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:id="@+id/progressDurability"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:max="100"
+                android:progress="100"
+                android:progressDrawable="@drawable/progress_durability" />
+
+            <TextView
+                android:id="@+id/tvDurability"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="4dp"
+                android:text="10/10"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp" />
+
+        </LinearLayout>
+
         <!-- 수량 -->
         <TextView
             android:id="@+id/tvItemQuantity"
@@ -68,7 +104,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="x3"
-            android:textColor="@color/text_secondary"
+            android:textColor="@color/text_tertiary"
             android:textSize="11sp" />
 
     </LinearLayout>

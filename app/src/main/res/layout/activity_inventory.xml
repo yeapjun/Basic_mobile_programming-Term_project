@@ -8,25 +8,33 @@
     android:background="@color/background_dark"
     tools:context=".ui.InventoryActivity">
 
-    <!-- 상단 툴바 -->
+    <!-- 상단 헤더 -->
     <LinearLayout
-        android:id="@+id/toolbar"
+        android:id="@+id/header"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingHorizontal="16dp"
-        android:background="@color/surface_dark"
+        android:paddingVertical="16dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton
+        <FrameLayout
             android:id="@+id/btnBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_back"
-            android:contentDescription="뒤로가기"
-            app:tint="@color/white" />
+            android:background="@drawable/bg_nav_item"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_back"
+                app:tint="@color/white" />
+
+        </FrameLayout>
 
         <TextView
             android:layout_width="0dp"
@@ -35,53 +43,115 @@
             android:layout_marginStart="16dp"
             android:text="인벤토리"
             android:textColor="@color/white"
-            android:textSize="20sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
     </LinearLayout>
 
-    <!-- 탭 레이아웃 -->
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayout"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="@color/surface_dark"
-        app:tabIndicatorColor="@color/primary"
-        app:tabSelectedTextColor="@color/primary"
-        app:tabTextColor="@color/text_secondary"
-        app:layout_constraintTop_toBottomOf="@id/toolbar">
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⚔️ 무기" />
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="💚 포션" />
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="📊 기록" />
-
-    </com.google.android.material.tabs.TabLayout>
-
-    <!-- 장착 무기 정보 -->
-    <TextView
-        android:id="@+id/tvEquippedWeapon"
+    <!-- 장착 무기 카드 -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/equippedWeaponCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp"
-        android:background="@color/surface_dark"
-        android:text="장착된 무기 없음"
-        android:textColor="@color/primary"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:visibility="visible"
-        app:layout_constraintTop_toBottomOf="@id/tabLayout" />
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        app:cardBackgroundColor="@color/card_background"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:layout_constraintTop_toBottomOf="@id/header">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_gradient_primary"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚔️"
+                    android:textSize="24sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="장착 중"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tvEquippedWeapon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="장착된 무기 없음"
+                    android:textColor="@color/white"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- 탭 레이아웃 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/tabCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="@color/surface_dark"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:layout_constraintTop_toBottomOf="@id/equippedWeaponCard">
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayout"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            app:tabIndicatorColor="@color/primary"
+            app:tabIndicatorHeight="3dp"
+            app:tabSelectedTextColor="@color/primary"
+            app:tabTextColor="@color/text_secondary"
+            app:tabMode="fixed"
+            app:tabGravity="fill">
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚔️ 무기" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💚 포션" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📊 기록" />
+
+        </com.google.android.material.tabs.TabLayout>
+
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- 아이템 목록 -->
     <androidx.recyclerview.widget.RecyclerView
@@ -92,7 +162,7 @@
         android:clipToPadding="false"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="2"
-        app:layout_constraintTop_toBottomOf="@id/tvEquippedWeapon"
+        app:layout_constraintTop_toBottomOf="@id/tabCard"
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <!-- 빈 상태 -->
@@ -103,33 +173,45 @@
         android:orientation="vertical"
         android:gravity="center"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/tvEquippedWeapon"
+        app:layout_constraintTop_toBottomOf="@id/tabCard"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <TextView
-            android:id="@+id/tvEmptyEmoji"
+        <androidx.cardview.widget.CardView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="📦"
-            android:textSize="64sp" />
+            app:cardBackgroundColor="@color/card_background"
+            app:cardCornerRadius="50dp"
+            app:cardElevation="0dp">
+
+            <TextView
+                android:id="@+id/tvEmptyEmoji"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:gravity="center"
+                android:text="📦"
+                android:textSize="48sp" />
+
+        </androidx.cardview.widget.CardView>
 
         <TextView
             android:id="@+id/tvEmptyMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="20dp"
             android:text="아이템이 없습니다"
-            android:textColor="@color/text_secondary"
-            android:textSize="16sp" />
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="건강한 음식을 스캔하면\n무기와 포션을 얻을 수 있어요!"
-            android:textColor="@color/text_tertiary"
+            android:textColor="@color/text_secondary"
             android:textSize="13sp"
-            android:gravity="center" />
+            android:gravity="center"
+            android:lineSpacingExtra="4dp" />
 
     </LinearLayout>
 

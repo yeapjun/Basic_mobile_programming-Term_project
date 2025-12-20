@@ -4,32 +4,54 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- 브랜드 색상 -->
+    <!-- 브랜드 색상 - 활기찬 오렌지/코랄 -->
     <color name="primary">#FF6B35</color>
     <color name="primary_dark">#E55A2B</color>
     <color name="primary_light">#FF8F5E</color>
+    <color name="secondary">#00D9A5</color>
+    <color name="secondary_dark">#00B88A</color>
+    <color name="accent">#FFB800</color>
+
+    <!-- 그라데이션 색상 -->
+    <color name="gradient_start">#FF6B35</color>
+    <color name="gradient_end">#FF8F5E</color>
+    <color name="gradient_green_start">#00D9A5</color>
+    <color name="gradient_green_end">#00F5B8</color>
+    <color name="gradient_purple_start">#7C3AED</color>
+    <color name="gradient_purple_end">#A78BFA</color>
+    <color name="gradient_blue_start">#3B82F6</color>
+    <color name="gradient_blue_end">#60A5FA</color>
 
     <!-- 배경 색상 (다크 테마) -->
-    <color name="background_dark">#121212</color>
-    <color name="surface_dark">#1E1E1E</color>
-    <color name="surface_light">#2D2D2D</color>
+    <color name="background_dark">#0F0F0F</color>
+    <color name="background_secondary">#141414</color>
+    <color name="surface_dark">#1A1A1A</color>
+    <color name="surface_light">#242424</color>
+    <color name="surface_variant">#2A2A2A</color>
+    <color name="surface_elevated">#1E1E1E</color>
+    <color name="divider">#2A2A2A</color>
+    <color name="card_background">#1C1C1E</color>
 
     <!-- 텍스트 색상 -->
     <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#B3B3B3</color>
+    <color name="text_secondary">#A0A0A0</color>
     <color name="text_tertiary">#666666</color>
+    <color name="text_hint">#4A4A4A</color>
 
-    <!-- 게임 색상 -->
+    <!-- 게임/헬스 색상 -->
     <color name="hp_red">#FF4757</color>
-    <color name="hp_green">#2ED573</color>
-    <color name="exp_yellow">#FFA502</color>
-    <color name="mana_blue">#3498DB</color>
+    <color name="hp_red_light">#FF6B7A</color>
+    <color name="hp_green">#00D9A5</color>
+    <color name="exp_yellow">#FFB800</color>
+    <color name="exp_yellow_light">#FFCC33</color>
+    <color name="mana_blue">#3B82F6</color>
+    <color name="energy_purple">#7C3AED</color>
 
     <!-- 티어/등급 색상 -->
     <color name="tier_common">#9CA3AF</color>
     <color name="tier_rare">#3B82F6</color>
     <color name="tier_epic">#A855F7</color>
-    <color name="tier_legendary">#FFD700</color>
+    <color name="tier_legendary">#FFB800</color>
 
     <!-- 속성 색상 -->
     <color name="element_sweet">#FF6B9D</color>
@@ -38,7 +60,17 @@
     <color name="element_toxic">#9B59B6</color>
 
     <!-- 상태 색상 -->
-    <color name="success">#2ED573</color>
-    <color name="warning">#FFA502</color>
+    <color name="success">#00D9A5</color>
+    <color name="warning">#FFB800</color>
     <color name="error">#FF4757</color>
+    <color name="info">#3B82F6</color>
+
+    <!-- 버튼 색상 -->
+    <color name="button_primary">#FF6B35</color>
+    <color name="button_secondary">#2A2A2A</color>
+    <color name="button_disabled">#1A1A1A</color>
+
+    <!-- 프로그레스 바 배경 -->
+    <color name="progress_background">#2A2A2A</color>
+    <color name="progress_track">#1A1A1A</color>
 </resources>

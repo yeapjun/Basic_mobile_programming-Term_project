@@ -45,6 +45,21 @@
             android:name=".ui.InventoryActivity"
             android:screenOrientation="portrait" />
 
+        <!-- Daily Quest Activity -->
+        <activity
+            android:name=".ui.DailyQuestActivity"
+            android:screenOrientation="portrait" />
+
+        <!-- Nutrition Stats Activity -->
+        <activity
+            android:name=".ui.NutritionStatsActivity"
+            android:screenOrientation="portrait" />
+
+        <!-- Attendance Activity -->
+        <activity
+            android:name=".ui.AttendanceActivity"
+            android:screenOrientation="portrait" />
+
     </application>
 
 </manifest>

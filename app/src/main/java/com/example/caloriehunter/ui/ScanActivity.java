@@ -29,9 +29,11 @@ import androidx.core.content.ContextCompat;
 import com.example.caloriehunter.BuildConfig;
 import com.example.caloriehunter.R;
 import com.example.caloriehunter.api.GeminiService;
+import com.example.caloriehunter.data.model.DailyQuest;
 import com.example.caloriehunter.data.model.Item;
 import com.example.caloriehunter.data.model.Monster;
 import com.example.caloriehunter.data.model.NutritionData;
+import com.example.caloriehunter.data.model.NutritionRecord;
 import com.example.caloriehunter.data.repository.FirebaseRepository;
 import com.example.caloriehunter.data.repository.FoodRepository;
 import com.example.caloriehunter.databinding.ActivityScanBinding;
@@ -69,6 +71,7 @@ public class ScanActivity extends AppCompatActivity {
 
     private boolean isProcessing = false;
     private FoodAnalyzer.AnalysisResult lastResult;
+    private NutritionData lastNutritionData;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -93,9 +96,6 @@ public class ScanActivity extends AppCompatActivity {
         foodAnalyzer = new FoodAnalyzer();
         geminiService = GeminiService.getInstance();
         mainHandler = new Handler(Looper.getMainLooper());
-
-        // ===== API 키 테스트 (확인 후 삭제) =====
-        Log.d("API_TEST", "Gemini Key: " + BuildConfig.GEMINI_API_KEY);
 
         // 바코드 스캐너 옵션
         BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
@@ -470,6 +470,9 @@ public class ScanActivity extends AppCompatActivity {
             return;
         }
 
+        // 영양 데이터 저장 (나중에 기록용)
+        lastNutritionData = data;
+
         // 음식 분석
         lastResult = foodAnalyzer.analyze(data, userId);
 
@@ -514,10 +517,36 @@ public class ScanActivity extends AppCompatActivity {
     }
 
     private void saveResultAndFinish() {
-        if (lastResult == null) return;
+        if (lastResult == null || lastNutritionData == null) return;
 
         showLoading(true);
 
+        String userId = firebaseRepository.getCurrentUserId();
+        if (userId == null) {
+            showLoading(false);
+            return;
+        }
+
+        // 1. 영양 기록 저장
+        boolean isHealthy = !lastResult.isMonster();
+        String resultType = lastResult.isMonster() ? "MONSTER" : "ITEM";
+        NutritionRecord record = NutritionRecord.fromNutritionData(lastNutritionData, userId, isHealthy, resultType);
+
+        firebaseRepository.saveNutritionRecord(record, new FirebaseRepository.SimpleCallback() {
+            @Override
+            public void onSuccess() {
+                // 2. 퀘스트 진행: 음식 스캔
+                progressQuests(userId, isHealthy);
+            }
+
+            @Override
+            public void onError(String message) {
+                // 기록 실패해도 계속 진행
+                progressQuests(userId, isHealthy);
+            }
+        });
+
+        // 3. 몬스터 또는 아이템 저장
         if (lastResult.isMonster()) {
             firebaseRepository.saveMonster(lastResult.getMonster(), new FirebaseRepository.MonsterCallback() {
                 @Override
@@ -554,6 +583,31 @@ public class ScanActivity extends AppCompatActivity {
                     });
                 }
             });
+        }
+    }
+
+    /**
+     * 퀘스트 진행 처리
+     */
+    private void progressQuests(String userId, boolean isHealthy) {
+        // 음식 스캔 퀘스트 진행
+        firebaseRepository.progressQuestByType(userId, DailyQuest.QuestType.SCAN_FOOD.name(), 1,
+                new FirebaseRepository.SimpleCallback() {
+                    @Override
+                    public void onSuccess() {}
+                    @Override
+                    public void onError(String message) {}
+                });
+
+        // 건강한 음식 스캔 퀘스트 진행 (아이템인 경우만)
+        if (isHealthy) {
+            firebaseRepository.progressQuestByType(userId, DailyQuest.QuestType.SCAN_HEALTHY.name(), 1,
+                    new FirebaseRepository.SimpleCallback() {
+                        @Override
+                        public void onSuccess() {}
+                        @Override
+                        public void onError(String message) {}
+                    });
         }
     }
 

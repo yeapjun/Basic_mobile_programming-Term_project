@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -159,9 +161,10 @@ public class InventoryActivity extends AppCompatActivity {
     }
 
     private void showEquipDialog(Item item) {
-        if (currentUser == null) return;
+        if (currentUser == null || item.getId() == null) return;
 
-        boolean isEquipped = item.getId().equals(currentUser.getEquippedWeaponId());
+        String equippedId = currentUser.getEquippedWeaponId();
+        boolean isEquipped = item.getId().equals(equippedId);
         String title = isEquipped ? "무기 해제" : "무기 장착";
         String message = isEquipped
             ? "'" + item.getName() + "'을(를) 해제하시겠습니까?"
@@ -285,6 +288,9 @@ public class InventoryActivity extends AppCompatActivity {
             private final TextView tvItemName;
             private final TextView tvItemStat;
             private final TextView tvItemQuantity;
+            private final LinearLayout durabilityLayout;
+            private final ProgressBar progressDurability;
+            private final TextView tvDurability;
 
             ItemViewHolder(View itemView) {
                 super(itemView);
@@ -293,6 +299,9 @@ public class InventoryActivity extends AppCompatActivity {
                 tvItemName = itemView.findViewById(R.id.tvItemName);
                 tvItemStat = itemView.findViewById(R.id.tvItemStat);
                 tvItemQuantity = itemView.findViewById(R.id.tvItemQuantity);
+                durabilityLayout = itemView.findViewById(R.id.durabilityLayout);
+                progressDurability = itemView.findViewById(R.id.progressDurability);
+                tvDurability = itemView.findViewById(R.id.tvDurability);
             }
 
             void bind(Item item) {
@@ -304,9 +313,9 @@ public class InventoryActivity extends AppCompatActivity {
                 tvItemEmoji.setText(item.getTypeEmoji());
 
                 // 이름 (장착 중이면 표시)
-                boolean isEquipped = currentUser != null &&
-                        item.getId() != null &&
-                        item.getId().equals(currentUser.getEquippedWeaponId());
+                String itemId = item.getId();
+                String equippedId = currentUser != null ? currentUser.getEquippedWeaponId() : null;
+                boolean isEquipped = itemId != null && itemId.equals(equippedId);
 
                 if (isEquipped) {
                     tvItemName.setText(item.getName() + " [장착중]");
@@ -321,12 +330,23 @@ public class InventoryActivity extends AppCompatActivity {
                 if (item.getType() == Item.ItemType.WEAPON) {
                     stat = "ATK +" + item.getAttackPower();
                     tvItemStat.setTextColor(getColor(R.color.primary));
+
+                    // 내구도 표시 (무기만)
+                    if (item.getMaxDurability() > 0) {
+                        durabilityLayout.setVisibility(View.VISIBLE);
+                        progressDurability.setProgress(item.getDurabilityPercent());
+                        tvDurability.setText(item.getDurability() + "/" + item.getMaxDurability());
+                    } else {
+                        durabilityLayout.setVisibility(View.GONE);
+                    }
                 } else if (item.getType() == Item.ItemType.POTION) {
                     stat = "HP +" + item.getHealAmount();
                     tvItemStat.setTextColor(getColor(R.color.hp_green));
+                    durabilityLayout.setVisibility(View.GONE);
                 } else {
                     stat = "BUFF +" + item.getBuffPower();
                     tvItemStat.setTextColor(getColor(R.color.exp_yellow));
+                    durabilityLayout.setVisibility(View.GONE);
                 }
                 tvItemStat.setText(stat);
 

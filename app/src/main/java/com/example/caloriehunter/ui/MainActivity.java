@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.caloriehunter.R;
+import com.example.caloriehunter.data.model.Item;
 import com.example.caloriehunter.data.model.Monster;
 import com.example.caloriehunter.data.model.User;
 import com.example.caloriehunter.data.repository.FirebaseRepository;
@@ -43,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
                 if (userId != null) {
                     // 승리한 경우 메시지 표시
                     if (result.getResultCode() == RESULT_OK) {
-                        Toast.makeText(this, "🎉 몬스터를 처치했습니다!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "몬스터를 처치했습니다!", Toast.LENGTH_SHORT).show();
                     }
                     // 유저 정보 & 몬스터 정보 갱신
                     loadUserData(userId);
@@ -82,9 +83,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        // 스캔 버튼
+        // 스캔 버튼 (중앙 FAB)
         binding.fabScan.setOnClickListener(v -> {
             Intent intent = new Intent(this, ScanActivity.class);
+            startActivity(intent);
+        });
+
+        // 출석 버튼
+        binding.btnAttendance.setOnClickListener(v -> {
+            Intent intent = new Intent(this, AttendanceActivity.class);
             startActivity(intent);
         });
 
@@ -99,8 +106,31 @@ public class MainActivity extends AppCompatActivity {
             if (activeMonster != null) {
                 Intent intent = new Intent(this, BattleActivity.class);
                 intent.putExtra("monster_id", activeMonster.getId());
-                battleLauncher.launch(intent);  // 결과를 받아서 처리
+                battleLauncher.launch(intent);
             }
+        });
+
+        // 퀘스트 카드
+        binding.btnQuest.setOnClickListener(v -> {
+            Intent intent = new Intent(this, DailyQuestActivity.class);
+            startActivity(intent);
+        });
+
+        // 통계 카드
+        binding.btnStats.setOnClickListener(v -> {
+            Intent intent = new Intent(this, NutritionStatsActivity.class);
+            startActivity(intent);
+        });
+
+        // 하단 네비게이션 - 홈 (현재 화면)
+        binding.navHome.setOnClickListener(v -> {
+            // 이미 홈이므로 스크롤 맨 위로
+        });
+
+        // 하단 네비게이션 - 기록
+        binding.navHistory.setOnClickListener(v -> {
+            Intent intent = new Intent(this, NutritionStatsActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -219,22 +249,55 @@ public class MainActivity extends AppCompatActivity {
         // HP 바
         int hpPercent = (int) ((float) currentUser.getHp() / currentUser.getMaxHp() * 100);
         binding.progressHp.setProgress(hpPercent);
+        binding.tvHpValue.setText(currentUser.getHp() + "/" + currentUser.getMaxHp());
 
         // EXP 바
         int expPercent = (int) ((float) currentUser.getExp() / currentUser.getExpToNextLevel() * 100);
         binding.progressExp.setProgress(expPercent);
+        binding.tvExpValue.setText(currentUser.getExp() + "/" + currentUser.getExpToNextLevel());
 
         // 장착 무기 정보
         if (currentUser.getEquippedWeaponName() != null && !currentUser.getEquippedWeaponName().isEmpty()) {
             binding.tvEquippedWeapon.setText(currentUser.getEquippedWeaponName() + " (+" + currentUser.getEquippedWeaponPower() + ")");
             binding.tvEquippedWeapon.setTextColor(getColor(R.color.primary));
+            // 무기 내구도 로드
+            loadWeaponDurability();
         } else {
             binding.tvEquippedWeapon.setText("장착된 무기 없음");
             binding.tvEquippedWeapon.setTextColor(getColor(R.color.text_secondary));
+            binding.durabilityBar.setVisibility(View.GONE);
         }
 
         // 총 공격력
-        binding.tvTotalAttack.setText("ATK " + currentUser.getTotalAttackPower());
+        binding.tvTotalAttack.setText(String.valueOf(currentUser.getTotalAttackPower()));
+    }
+
+    private void loadWeaponDurability() {
+        String userId = firebaseRepository.getCurrentUserId();
+        if (userId == null || currentUser == null || currentUser.getEquippedWeaponId() == null) {
+            binding.durabilityBar.setVisibility(View.GONE);
+            return;
+        }
+
+        firebaseRepository.getWeapon(userId, currentUser.getEquippedWeaponId(), new FirebaseRepository.ItemCallback() {
+            @Override
+            public void onSuccess(Item weapon) {
+                runOnUiThread(() -> {
+                    if (weapon.getMaxDurability() > 0) {
+                        binding.durabilityBar.setVisibility(View.VISIBLE);
+                        binding.progressWeaponDurability.setProgress(weapon.getDurabilityPercent());
+                        binding.tvWeaponDurability.setText(weapon.getDurability() + "/" + weapon.getMaxDurability());
+                    } else {
+                        binding.durabilityBar.setVisibility(View.GONE);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> binding.durabilityBar.setVisibility(View.GONE));
+            }
+        });
     }
 
     private void updateMonsterUI() {

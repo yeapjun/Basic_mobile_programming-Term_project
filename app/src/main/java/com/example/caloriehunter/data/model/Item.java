@@ -151,4 +151,22 @@ public class Item {
         if (maxDurability <= 0) return 100;
         return (int) ((float) durability / maxDurability * 100);
     }
+
+    /**
+     * 출석 보상용 포션 생성
+     */
+    @Exclude
+    public static Item createAttendancePotion(String ownerId) {
+        Item potion = new Item();
+        potion.setId(java.util.UUID.randomUUID().toString());
+        potion.setOwnerId(ownerId);
+        potion.setName("출석 포션");
+        potion.setType(ItemType.POTION);
+        potion.setFoodName("출석 보상");
+        potion.setHealAmount(30);  // 30 HP 회복
+        potion.setRarity("rare");
+        potion.setQuantity(1);
+        potion.setObtainedAt(System.currentTimeMillis());
+        return potion;
+    }
 }

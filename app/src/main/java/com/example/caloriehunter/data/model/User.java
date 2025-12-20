@@ -28,7 +28,7 @@ public class User {
     private int unhealthyFoodCount;
 
     // 현재 활성 몬스터 ID
-    private String activeMonsterld;
+    private String activeMonsterId;
 
     // 장착 아이템
     private String equippedWeaponId;
@@ -113,7 +113,7 @@ public class User {
         result.put("totalDamageDealt", totalDamageDealt);
         result.put("healthyFoodCount", healthyFoodCount);
         result.put("unhealthyFoodCount", unhealthyFoodCount);
-        result.put("activeMonsterId", activeMonsterld);
+        result.put("activeMonsterId", activeMonsterId);
         result.put("equippedWeaponId", equippedWeaponId);
         result.put("equippedWeaponName", equippedWeaponName);
         result.put("equippedWeaponPower", equippedWeaponPower);
@@ -156,8 +156,8 @@ public class User {
     public int getUnhealthyFoodCount() { return unhealthyFoodCount; }
     public void setUnhealthyFoodCount(int unhealthyFoodCount) { this.unhealthyFoodCount = unhealthyFoodCount; }
 
-    public String getActiveMonsterId() { return activeMonsterld; }
-    public void setActiveMonsterId(String activeMonsterId) { this.activeMonsterld = activeMonsterId; }
+    public String getActiveMonsterId() { return activeMonsterId; }
+    public void setActiveMonsterId(String activeMonsterId) { this.activeMonsterId = activeMonsterId; }
 
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }

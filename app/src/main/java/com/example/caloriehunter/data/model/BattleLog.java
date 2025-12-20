@@ -11,7 +11,7 @@ import java.util.Map;
 public class BattleLog {
 
     private String id;
-    private String oderId;
+    private String ownerId;
 
     // 몬스터 정보
     private String monsterName;
@@ -33,10 +33,10 @@ public class BattleLog {
     }
 
     // 승리 로그 생성
-    public static BattleLog createVictoryLog(String oderId, Monster monster, int expGained) {
+    public static BattleLog createVictoryLog(String ownerId, Monster monster, int expGained) {
         BattleLog log = new BattleLog();
         log.id = java.util.UUID.randomUUID().toString();
-        log.oderId = oderId;
+        log.ownerId = ownerId;
         log.monsterName = monster.getName();
         log.monsterTier = monster.getTier();
         log.monsterElement = monster.getElement();
@@ -54,7 +54,7 @@ public class BattleLog {
     public Map<String, Object> toMap() {
         HashMap<String, Object> result = new HashMap<>();
         result.put("id", id);
-        result.put("oderId", oderId);
+        result.put("ownerId", ownerId);
         result.put("monsterName", monsterName);
         result.put("monsterTier", monsterTier);
         result.put("monsterElement", monsterElement);
@@ -111,8 +111,8 @@ public class BattleLog {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
-    public String getOderId() { return oderId; }
-    public void setOderId(String oderId) { this.oderId = oderId; }
+    public String getOwnerId() { return ownerId; }
+    public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
 
     public String getMonsterName() { return monsterName; }
     public void setMonsterName(String monsterName) { this.monsterName = monsterName; }

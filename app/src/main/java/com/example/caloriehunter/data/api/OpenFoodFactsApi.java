@@ -65,14 +65,18 @@ public interface OpenFoodFactsApi {
 
         /**
          * 나트륨 mg 단위로 변환 (API가 g 또는 mg로 올 수 있음)
+         * Open Food Facts는 일반적으로 나트륨을 g 단위로 반환
          */
         public float getSodiumMg() {
             float value = sodium_100g;
             if (value == 0 && sodium != null) {
                 value = sodium;
             }
-            // 1g 미만이면 이미 g 단위 → mg로 변환
-            if (value > 0 && value < 10) {
+            // 일반적으로 나트륨 권장량은 2000mg = 2g
+            // 100g당 2g(2000mg) 이하면 g 단위로 간주하고 mg로 변환
+            // 100g당 2000mg 이상이면 이미 mg 단위로 간주
+            if (value > 0 && value <= 5) {
+                // g 단위로 간주 → mg로 변환
                 return value * 1000;
             }
             return value;

@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.caloriehunter.R;
 import com.example.caloriehunter.data.model.BattleLog;
+import com.example.caloriehunter.data.model.DailyQuest;
 import com.example.caloriehunter.data.model.Item;
 import com.example.caloriehunter.data.model.Monster;
 import com.example.caloriehunter.data.model.User;
@@ -36,6 +37,7 @@ public class BattleActivity extends AppCompatActivity {
     private Monster monster;
     private User user;
     private List<Item> potions;
+    private Item equippedWeapon;  // 장착된 무기
 
     private int userCurrentHp;
     private int monsterCurrentHp;
@@ -126,6 +128,9 @@ public class BattleActivity extends AppCompatActivity {
 
                 // 포션 로드
                 loadPotions(userId);
+
+                // 장착 무기 로드
+                loadEquippedWeapon(userId);
             }
 
             @Override
@@ -136,18 +141,23 @@ public class BattleActivity extends AppCompatActivity {
                 });
             }
         });
+    }
 
-        // 포션 로드
-        firebaseRepository.getPotions(userId, new FirebaseRepository.ItemsCallback() {
+    private void loadEquippedWeapon(String userId) {
+        if (user == null || user.getEquippedWeaponId() == null || user.getEquippedWeaponId().isEmpty()) {
+            equippedWeapon = null;
+            return;
+        }
+
+        firebaseRepository.getWeapon(userId, user.getEquippedWeaponId(), new FirebaseRepository.ItemCallback() {
             @Override
-            public void onSuccess(List<Item> items) {
-                potions = items;
-                runOnUiThread(() -> updatePotionButton());
+            public void onSuccess(Item item) {
+                equippedWeapon = item;
             }
 
             @Override
             public void onError(String message) {
-                potions = null;
+                equippedWeapon = null;
             }
         });
     }
@@ -225,12 +235,66 @@ public class BattleActivity extends AppCompatActivity {
         // UI 업데이트
         updateMonsterUI();
 
+        // 무기 내구도 감소
+        reduceWeaponDurability();
+
         // 승리 체크
         if (monsterCurrentHp <= 0) {
             handler.postDelayed(this::handleVictory, 500);
         } else {
             // 몬스터 반격
             handler.postDelayed(this::monsterAttack, 800);
+        }
+    }
+
+    private void reduceWeaponDurability() {
+        if (equippedWeapon == null) return;
+
+        String userId = firebaseRepository.getCurrentUserId();
+        if (userId == null) return;
+
+        // 내구도 1 감소
+        boolean isDestroyed = equippedWeapon.reduceDurability(1);
+
+        if (isDestroyed) {
+            // 무기 파괴!
+            addBattleLog("💔 " + equippedWeapon.getName() + "이(가) 부서졌다!");
+
+            // Firebase에서 무기 삭제
+            firebaseRepository.deleteWeapon(userId, equippedWeapon.getId(), new FirebaseRepository.SimpleCallback() {
+                @Override
+                public void onSuccess() {}
+                @Override
+                public void onError(String message) {}
+            });
+
+            // 유저의 장착 무기 해제
+            firebaseRepository.unequipWeapon(userId, new FirebaseRepository.SimpleCallback() {
+                @Override
+                public void onSuccess() {
+                    user.setEquippedWeaponId(null);
+                    user.setEquippedWeaponName(null);
+                    user.setEquippedWeaponPower(0);
+                }
+                @Override
+                public void onError(String message) {}
+            });
+
+            equippedWeapon = null;
+
+            runOnUiThread(() -> {
+                Toast.makeText(this, "무기가 부서졌습니다!", Toast.LENGTH_SHORT).show();
+            });
+        } else {
+            // 내구도 업데이트
+            addBattleLog("🔧 무기 내구도: " + equippedWeapon.getDurability() + "/" + equippedWeapon.getMaxDurability());
+            firebaseRepository.updateWeaponDurability(userId, equippedWeapon.getId(),
+                    equippedWeapon.getDurability(), new FirebaseRepository.SimpleCallback() {
+                @Override
+                public void onSuccess() {}
+                @Override
+                public void onError(String message) {}
+            });
         }
     }
 
@@ -274,26 +338,26 @@ public class BattleActivity extends AppCompatActivity {
 
         addBattleLog("💚 " + potion.getName() + " 사용! HP +" + actualHeal);
 
-        // 포션 소비
-        String userId = firebaseRepository.getCurrentUserId();
-        firebaseRepository.useItem(userId, potion, new FirebaseRepository.SimpleCallback() {
-            @Override
-            public void onSuccess() {
-                potions.remove(0);
-                runOnUiThread(() -> {
-                    updatePotionButton();
-                    updatePlayerUI();
-                });
-            }
-
-            @Override
-            public void onError(String message) {
-                // 실패해도 진행
-            }
-        });
-
+        // 포션 리스트에서 즉시 제거 (UI 동기화)
+        potions.remove(0);
         updatePlayerUI();
         updatePotionButton();
+
+        // 포션 소비 (Firebase 동기화)
+        String userId = firebaseRepository.getCurrentUserId();
+        if (userId != null) {
+            firebaseRepository.useItem(userId, potion, new FirebaseRepository.SimpleCallback() {
+                @Override
+                public void onSuccess() {
+                    // 이미 로컬에서 제거됨
+                }
+
+                @Override
+                public void onError(String message) {
+                    // 실패해도 진행 (로컬 상태 우선)
+                }
+            });
+        }
 
         // 몬스터 반격
         handler.postDelayed(this::monsterAttack, 800);
@@ -332,6 +396,15 @@ public class BattleActivity extends AppCompatActivity {
                     @Override
                     public void onError(String message) {}
                 });
+
+                // 몬스터 처치 퀘스트 진행
+                firebaseRepository.progressQuestByType(userId, DailyQuest.QuestType.DEFEAT_MONSTER.name(), 1,
+                        new FirebaseRepository.SimpleCallback() {
+                            @Override
+                            public void onSuccess() {}
+                            @Override
+                            public void onError(String message) {}
+                        });
             }
             @Override
             public void onError(String message) {}
@@ -410,5 +483,12 @@ public class BattleActivity extends AppCompatActivity {
         } else {
             showRunConfirmDialog();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Handler 콜백 정리 (메모리 누수 방지)
+        handler.removeCallbacksAndMessages(null);
     }
 }

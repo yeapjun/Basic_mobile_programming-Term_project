@@ -310,26 +310,49 @@ public class FoodAnalyzer {
         item.setObtainedAt(System.currentTimeMillis());
         item.setQuantity(1);
 
-        // 타입 결정: 단백질 우세 → 무기, 식이섬유 우세 → 포션
-        boolean isWeaponType = food.getProtein() > food.getFiber();
-
-        // 영양밀도가 높으면 버프 아이템
+        // 타입 결정 기준:
+        // 1. 영양밀도가 높으면 → 버프
+        // 2. 단백질 5g 이상 & 단백질 > 식이섬유 → 무기 (고단백 음식)
+        // 3. 식이섬유 2g 이상 & 식이섬유 >= 단백질 → 포션 (고섬유 음식)
+        // 4. 그 외 (가벼운 음식: 커피, 차 등) → 버프
         float nutritionDensity = calculateNutritionDensity(food);
+        boolean isHighProtein = food.getProtein() >= 5 && food.getProtein() > food.getFiber();
+        boolean isHighFiber = food.getFiber() >= 2 && food.getFiber() >= food.getProtein();
+
         if (nutritionDensity > 15) {
+            // 영양밀도 높은 음식 → 버프
             item.setType(Item.ItemType.BUFF);
             item.setName(food.getFoodName() + " 에너지");
             item.setBuffPower(Math.round(nutritionDensity));
             item.setBuffDuration(30); // 30초
-        } else if (isWeaponType) {
+        } else if (isHighProtein) {
+            // 고단백 음식 → 무기
             item.setType(Item.ItemType.WEAPON);
             item.setName(food.getFoodName() + " 소드");
             int attackPower = Math.round(food.getProtein() * PROTEIN_TO_ATTACK);
             item.setAttackPower(Math.max(10, Math.min(attackPower, 150)));
-        } else {
+            // 내구도 설정 (건강 점수에 따라 다르게)
+            // common: 10회, rare: 15회, epic: 20회, legendary: 30회
+            int baseDurability;
+            if (healthScore >= 60) baseDurability = 30;       // legendary
+            else if (healthScore >= 40) baseDurability = 20;  // epic
+            else if (healthScore >= 20) baseDurability = 15;  // rare
+            else baseDurability = 10;                         // common
+            item.setMaxDurability(baseDurability);
+            item.setDurability(baseDurability);
+        } else if (isHighFiber) {
+            // 고섬유 음식 → 포션
             item.setType(Item.ItemType.POTION);
             item.setName(food.getFoodName() + " 포션");
             int healAmount = Math.round(food.getFiber() * FIBER_TO_HEAL);
             item.setHealAmount(Math.max(10, Math.min(healAmount, 100)));
+        } else {
+            // 가벼운 음식 (커피, 차, 물 등) → 버프
+            item.setType(Item.ItemType.BUFF);
+            item.setName(food.getFoodName() + " 부스트");
+            // 가벼운 음식은 약한 버프
+            item.setBuffPower(Math.max(5, Math.round(healthScore / 5)));
+            item.setBuffDuration(20); // 20초
         }
 
         // 등급 결정
