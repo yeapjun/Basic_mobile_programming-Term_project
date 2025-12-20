@@ -1,7 +1,6 @@
 package com.example.caloriehunter.api;
 
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import com.example.caloriehunter.BuildConfig;
 import com.example.caloriehunter.data.model.NutritionData;
@@ -22,8 +21,6 @@ import java.util.concurrent.Executors;
  * Gemini 공식 SDK를 사용한 음식 분석 서비스
  */
 public class GeminiService {
-    private static final String TAG = "GeminiService";
-    // Gemini 모델 이름
     private static final String MODEL_NAME = "gemini-2.5-flash-lite";
 
     private static GeminiService instance;
@@ -55,7 +52,6 @@ public class GeminiService {
         try {
             // 이미지 크기 조정 (너무 크면 API 오류 발생)
             Bitmap resizedImage = resizeBitmap(foodImage, 1024);
-            Log.d(TAG, "Image size: " + resizedImage.getWidth() + "x" + resizedImage.getHeight());
 
             String prompt = buildAnalysisPrompt();
 
@@ -69,7 +65,6 @@ public class GeminiService {
             ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
             handleResponse(response, callback);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to prepare image for analysis", e);
             callback.onError("이미지 준비 실패: " + e.getMessage());
         }
     }
@@ -96,9 +91,6 @@ public class GeminiService {
      * 음식 이름으로 영양 정보 추정 (텍스트 기반)
      */
     public void analyzeFoodByName(String foodName, GeminiCallback callback) {
-        Log.d(TAG, "========== Gemini 텍스트 분석 시작 ==========");
-        Log.d(TAG, "음식명: " + foodName);
-
         try {
             String prompt = buildTextAnalysisPrompt(foodName);
 
@@ -111,7 +103,6 @@ public class GeminiService {
             ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
             handleResponse(response, callback);
         } catch (Exception e) {
-            Log.e(TAG, "Gemini 요청 생성 실패: " + e.getMessage(), e);
             callback.onError("요청 생성 실패: " + e.getMessage());
         }
     }
@@ -125,7 +116,6 @@ public class GeminiService {
             public void onSuccess(GenerateContentResponse result) {
                 try {
                     String resultText = result.getText();
-                    Log.d(TAG, "Gemini Response: " + resultText);
 
                     if (resultText == null || resultText.isEmpty()) {
                         callback.onError("응답 내용이 없습니다.");
@@ -136,15 +126,12 @@ public class GeminiService {
                     callback.onSuccess(data);
 
                 } catch (Exception e) {
-                    Log.e(TAG, "Parsing error", e);
                     callback.onError("분석 결과를 처리하는 중 오류가 발생했습니다: " + e.getMessage());
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                Log.e(TAG, "API Error: " + t.getClass().getSimpleName() + " - " + t.getMessage(), t);
-
                 String errorMessage;
                 String msg = t.getMessage() != null ? t.getMessage().toLowerCase() : "";
 

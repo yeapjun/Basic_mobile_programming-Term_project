@@ -18,6 +18,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.GoogleAuthProvider;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,18 +95,15 @@ public class FirebaseRepository {
         return user != null ? user.getUid() : null;
     }
 
-    /**
-     * 익명 로그인
-     */
-    public void signInAnonymously(AuthCallback callback) {
-        auth.signInAnonymously()
+    // 구글 로그인 처리 함수
+    public void firebaseAuthWithGoogle(String idToken, AuthCallback callback) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+        auth.signInWithCredential(credential)
                 .addOnSuccessListener(authResult -> {
                     String uid = authResult.getUser().getUid();
-                    Log.d(TAG, "Anonymous sign in success: " + uid);
                     callback.onSuccess(uid);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Anonymous sign in failed", e);
                     callback.onError(e.getMessage());
                 });
     }
@@ -315,6 +315,32 @@ public class FirebaseRepository {
                             Item item = child.getValue(Item.class);
                             if (item != null) {
                                 item.setType(Item.ItemType.POTION);
+                                items.add(item);
+                            }
+                        }
+                        callback.onSuccess(items);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * 버프 아이템 목록 조회
+     */
+    public void getBuffs(String userId, ItemsCallback callback) {
+        database.child("users").child(userId).child("inventory/buffs")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<Item> items = new ArrayList<>();
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            Item item = child.getValue(Item.class);
+                            if (item != null) {
+                                item.setType(Item.ItemType.BUFF);
                                 items.add(item);
                             }
                         }

@@ -28,8 +28,8 @@ public class Item {
     // 스탯
     private int attackPower;    // 무기 공격력
     private int healAmount;     // 포션 회복량
-    private int buffDuration;   // 버프 지속 시간 (초)
-    private int buffPower;      // 버프 효과량
+    private int buffPower;      // 공격 버프 효과량 (%)
+    private int defenseBoost;   // 수비 버프 효과량 (% 데미지 감소)
 
     // 무기 내구도
     private int durability;     // 현재 내구도
@@ -59,8 +59,8 @@ public class Item {
         result.put("barcode", barcode);
         result.put("attackPower", attackPower);
         result.put("healAmount", healAmount);
-        result.put("buffDuration", buffDuration);
         result.put("buffPower", buffPower);
+        result.put("defenseBoost", defenseBoost);
         result.put("durability", durability);
         result.put("maxDurability", maxDurability);
         result.put("rarity", rarity);
@@ -117,11 +117,45 @@ public class Item {
     public int getHealAmount() { return healAmount; }
     public void setHealAmount(int healAmount) { this.healAmount = healAmount; }
 
-    public int getBuffDuration() { return buffDuration; }
-    public void setBuffDuration(int buffDuration) { this.buffDuration = buffDuration; }
-
     public int getBuffPower() { return buffPower; }
     public void setBuffPower(int buffPower) { this.buffPower = buffPower; }
+
+    public int getDefenseBoost() { return defenseBoost; }
+    public void setDefenseBoost(int defenseBoost) { this.defenseBoost = defenseBoost; }
+
+    /**
+     * 공격 버프 배율 계산 (buffPower를 배율로 변환)
+     * buffPower가 50이면 1.5배, 100이면 2.0배
+     */
+    @Exclude
+    public float getAttackBuffMultiplier() {
+        return 1.0f + (buffPower / 100.0f);
+    }
+
+    /**
+     * 수비 버프 배율 계산 (defenseBoost를 감소율로 변환)
+     * defenseBoost가 30이면 데미지 30% 감소 (0.7배)
+     */
+    @Exclude
+    public float getDefenseBuffMultiplier() {
+        return 1.0f - (defenseBoost / 100.0f);
+    }
+
+    /**
+     * 공격 버프인지 확인
+     */
+    @Exclude
+    public boolean isAttackBuff() {
+        return buffPower > 0;
+    }
+
+    /**
+     * 수비 버프인지 확인
+     */
+    @Exclude
+    public boolean isDefenseBuff() {
+        return defenseBoost > 0;
+    }
 
     public String getRarity() { return rarity; }
     public void setRarity(String rarity) { this.rarity = rarity; }

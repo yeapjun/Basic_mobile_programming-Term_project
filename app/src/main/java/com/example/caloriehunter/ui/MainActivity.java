@@ -18,6 +18,9 @@ import com.example.caloriehunter.data.model.User;
 import com.example.caloriehunter.data.repository.FirebaseRepository;
 import com.example.caloriehunter.databinding.ActivityMainBinding;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 /**
  * 메인 화면
  * - 유저 정보 표시
@@ -55,6 +58,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return;
+        }
+
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -150,24 +161,14 @@ public class MainActivity extends AppCompatActivity {
 
         String userId = firebaseRepository.getCurrentUserId();
 
+        // [수정] 로그인이 되어 있으면 데이터 로드, 아니면 로그인 화면으로 쫓아내기
         if (userId != null) {
-            // 기존 로그인 유저
             loadUserData(userId);
         } else {
-            // 익명 로그인
-            firebaseRepository.signInAnonymously(new FirebaseRepository.AuthCallback() {
-                @Override
-                public void onSuccess(String userId) {
-                    createNewUser(userId);
-                }
-
-                @Override
-                public void onError(String message) {
-                    isLoadingComplete = true;
-                    showLoading(false);
-                    Toast.makeText(MainActivity.this, "로그인 실패: " + message, Toast.LENGTH_SHORT).show();
-                }
-            });
+            // 로그인이 풀렸거나 안 된 상태 -> 로그인 화면으로 이동
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
+            finish(); // 메인 화면 종료
         }
     }
 

@@ -320,11 +320,11 @@ public class FoodAnalyzer {
         boolean isHighFiber = food.getFiber() >= 2 && food.getFiber() >= food.getProtein();
 
         if (nutritionDensity > 15) {
-            // 영양밀도 높은 음식 → 버프
+            // 영양밀도 높은 음식 → 공격 버프 (1회성)
             item.setType(Item.ItemType.BUFF);
-            item.setName(food.getFoodName() + " 에너지");
-            item.setBuffPower(Math.round(nutritionDensity));
-            item.setBuffDuration(30); // 30초
+            item.setName(food.getFoodName() + " 파워");
+            // 영양밀도에 따른 공격력 증가 (최소 20%, 최대 100%)
+            item.setBuffPower(Math.min(100, Math.max(20, Math.round(nutritionDensity * 2))));
         } else if (isHighProtein) {
             // 고단백 음식 → 무기
             item.setType(Item.ItemType.WEAPON);
@@ -347,12 +347,11 @@ public class FoodAnalyzer {
             int healAmount = Math.round(food.getFiber() * FIBER_TO_HEAL);
             item.setHealAmount(Math.max(10, Math.min(healAmount, 100)));
         } else {
-            // 가벼운 음식 (커피, 차, 물 등) → 버프
+            // 가벼운 음식 (커피, 차, 물 등) → 수비 버프 (1회성)
             item.setType(Item.ItemType.BUFF);
-            item.setName(food.getFoodName() + " 부스트");
-            // 가벼운 음식은 약한 버프
-            item.setBuffPower(Math.max(5, Math.round(healthScore / 5)));
-            item.setBuffDuration(20); // 20초
+            item.setName(food.getFoodName() + " 쉴드");
+            // 가벼운 음식은 수비 버프로 변경 (데미지 감소 %)
+            item.setDefenseBoost(Math.max(10, Math.min(50, Math.round(healthScore / 2))));
         }
 
         // 등급 결정

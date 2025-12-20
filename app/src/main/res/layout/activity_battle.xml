@@ -245,13 +245,13 @@
                 android:layout_height="52dp"
                 android:layout_weight="1"
                 android:text="⚔️ 공격"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 app:backgroundTint="@color/primary"
                 app:cornerRadius="12dp" />
 
             <Space
-                android:layout_width="10dp"
+                android:layout_width="8dp"
                 android:layout_height="match_parent" />
 
             <!-- 포션 버튼 -->
@@ -261,9 +261,25 @@
                 android:layout_height="52dp"
                 android:layout_weight="1"
                 android:text="💚 포션"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textColor="@color/white"
                 app:backgroundTint="@color/secondary_dark"
+                app:cornerRadius="12dp" />
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="match_parent" />
+
+            <!-- 버프 버튼 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBuff"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="✨ 버프"
+                android:textSize="14sp"
+                android:textColor="@color/white"
+                app:backgroundTint="#FF9800"
                 app:cornerRadius="12dp" />
 
         </LinearLayout>

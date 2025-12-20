@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "630000120534",
+    "firebase_url": "https://term-project-a8065-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "term-project-a8065",
     "storage_bucket": "term-project-a8065.firebasestorage.app"
   },
@@ -12,7 +13,20 @@
           "package_name": "com.example.caloriehunter"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "630000120534-5kol1ov2fmqmrp6uc61pan6lokje95tu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.caloriehunter",
+            "certificate_hash": "9918625f916627adf48d320ca6909bf63644fe59"
+          }
+        },
+        {
+          "client_id": "630000120534-upc5oglhrpnf37qm2jeqi2llufd4l9q0.apps.googleusercontent.com",
+            "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC-8rdj6CJRVDS35rAqSKVAoO6MkwOMOfM"
@@ -20,26 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:630000120534:android:d81badccccf23ee3a88f77",
-        "android_client_info": {
-          "package_name": "com.example.termproject"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyC-8rdj6CJRVDS35rAqSKVAoO6MkwOMOfM"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "630000120534-upc5oglhrpnf37qm2jeqi2llufd4l9q0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

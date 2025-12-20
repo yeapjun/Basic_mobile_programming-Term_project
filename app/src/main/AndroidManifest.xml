@@ -60,6 +60,8 @@
             android:name=".ui.AttendanceActivity"
             android:screenOrientation="portrait" />
 
+        <activity android:name=".ui.LoginActivity" />
+
     </application>
 
 </manifest>

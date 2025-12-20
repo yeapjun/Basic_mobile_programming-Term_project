@@ -110,4 +110,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    // 구글 로그인 라이브러리
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 }

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0D1B2A">
+
+    <!-- 배경 그라데이션 오버레이 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_login_gradient" />
+
+    <!-- 눈송이 장식들 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="24sp"
+        android:textColor="#80FFFFFF"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="60dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="32sp"
+        android:textColor="#60FFFFFF"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="120dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✨"
+        android:textSize="20sp"
+        android:layout_marginStart="300dp"
+        android:layout_marginTop="80dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="28sp"
+        android:textColor="#70FFFFFF"
+        android:layout_marginStart="280dp"
+        android:layout_marginTop="180dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✨"
+        android:textSize="16sp"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="200dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="20sp"
+        android:textColor="#50FFFFFF"
+        android:layout_marginStart="320dp"
+        android:layout_marginTop="300dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="36sp"
+        android:textColor="#40FFFFFF"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="450dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✨"
+        android:textSize="24sp"
+        android:layout_marginStart="260dp"
+        android:layout_marginTop="500dp" />
+
+    <!-- 메인 컨텐츠 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp">
+
+        <!-- 연말 장식 아이콘 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎄"
+            android:textSize="64sp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 앱 타이틀 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Calorie Hunter"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:shadowColor="#000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="4" />
+
+        <!-- 서브타이틀 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎅 건강한 연말을 위한 영양 관리 🎁"
+            android:textSize="14sp"
+            android:textColor="#B0BEC5"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="48dp" />
+
+        <!-- 로그인 카드 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            app:cardBackgroundColor="#1A2634"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="8dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:gravity="center">
+
+                <!-- 환영 메시지 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🌟 Welcome 🌟"
+                    android:textSize="20sp"
+                    android:textColor="#FFD54F"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="로그인하고 건강 모험을 시작하세요!"
+                    android:textSize="14sp"
+                    android:textColor="#90A4AE"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- 구글 로그인 버튼 -->
+                <com.google.android.gms.common.SignInButton
+                    android:id="@+id/btn_google_login"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <!-- 하단 장식 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⭐ ⭐ ⭐"
+                    android:textSize="16sp"
+                    android:layout_marginTop="20dp"
+                    android:textColor="#546E7A" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- 하단 연말 메시지 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎊 Happy Holidays! 🎊"
+            android:textSize="16sp"
+            android:textColor="#4FC3F7"
+            android:layout_marginTop="40dp" />
+
+        <!-- 버전 정보 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="v1.0.0 · Winter Edition"
+            android:textSize="12sp"
+            android:textColor="#455A64"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
+</FrameLayout>

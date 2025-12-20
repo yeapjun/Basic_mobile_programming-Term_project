@@ -37,11 +37,18 @@ public class BattleActivity extends AppCompatActivity {
     private Monster monster;
     private User user;
     private List<Item> potions;
+    private List<Item> buffs;  // 버프 아이템 목록
     private Item equippedWeapon;  // 장착된 무기
 
     private int userCurrentHp;
     private int monsterCurrentHp;
     private boolean isBattleOver = false;
+
+    // 버프 상태 관리 (1회성)
+    private boolean isAttackBuffActive = false;
+    private boolean isDefenseBuffActive = false;
+    private float attackBuffMultiplier = 1.0f;
+    private float defenseBuffMultiplier = 1.0f;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Random random = new Random();
@@ -74,7 +81,17 @@ public class BattleActivity extends AppCompatActivity {
 
         binding.btnPotion.setOnClickListener(v -> {
             if (!isBattleOver) {
-                usePotion();
+                showItemSelectionDialog("POTION", potions);
+            }
+        });
+
+        binding.btnBuff.setOnClickListener(v -> {
+            if (!isBattleOver) {
+                if (isAttackBuffActive || isDefenseBuffActive) {
+                    Toast.makeText(this, "이미 버프가 적용 중입니다!", Toast.LENGTH_SHORT).show();
+                } else {
+                    showItemSelectionDialog("BUFF", buffs);
+                }
             }
         });
 
@@ -129,6 +146,9 @@ public class BattleActivity extends AppCompatActivity {
                 // 포션 로드
                 loadPotions(userId);
 
+                // 버프 로드
+                loadBuffs(userId);
+
                 // 장착 무기 로드
                 loadEquippedWeapon(userId);
             }
@@ -177,6 +197,21 @@ public class BattleActivity extends AppCompatActivity {
         });
     }
 
+    private void loadBuffs(String userId) {
+        firebaseRepository.getBuffs(userId, new FirebaseRepository.ItemsCallback() {
+            @Override
+            public void onSuccess(List<Item> items) {
+                buffs = items;
+                runOnUiThread(() -> updateBuffButton());
+            }
+
+            @Override
+            public void onError(String message) {
+                // 버프 없음
+            }
+        });
+    }
+
     private void updateMonsterUI() {
         if (monster == null) return;
 
@@ -207,11 +242,35 @@ public class BattleActivity extends AppCompatActivity {
         binding.btnPotion.setEnabled(potionCount > 0);
     }
 
+    private void updateBuffButton() {
+        int buffCount = buffs != null ? buffs.size() : 0;
+        if (isAttackBuffActive) {
+            binding.btnBuff.setText("⚔️ 공격강화!");
+            binding.btnBuff.setEnabled(false);
+        } else if (isDefenseBuffActive) {
+            binding.btnBuff.setText("🛡️ 수비강화!");
+            binding.btnBuff.setEnabled(false);
+        } else {
+            binding.btnBuff.setText("✨ 버프 (" + buffCount + ")");
+            binding.btnBuff.setEnabled(buffCount > 0);
+        }
+    }
+
     private void playerAttack() {
         setActionsEnabled(false);
 
         // 기본 공격력 + 장착 무기 보너스
         int baseDamage = user.getTotalAttackPower();
+
+        // 공격 버프 적용 (1회성)
+        if (isAttackBuffActive) {
+            baseDamage = (int) (baseDamage * attackBuffMultiplier);
+            addBattleLog("💪 공격 버프 발동! (x" + attackBuffMultiplier + ")");
+            isAttackBuffActive = false;
+            attackBuffMultiplier = 1.0f;
+            updateBuffButton();
+        }
+
         int finalDamage = Math.max(1, baseDamage - monster.getDefense() / 2);
 
         // 크리티컬 확률 (10%)
@@ -307,6 +366,16 @@ public class BattleActivity extends AppCompatActivity {
             addBattleLog("☠️ 독 효과! +" + monster.getPoisonDamage() + " 추가 피해!");
         }
 
+        // 수비 버프 적용 (1회성)
+        if (isDefenseBuffActive) {
+            int originalDamage = damage;
+            damage = (int) (damage * defenseBuffMultiplier);
+            addBattleLog("🛡️ 수비 버프 발동! 데미지 " + originalDamage + " → " + damage);
+            isDefenseBuffActive = false;
+            defenseBuffMultiplier = 1.0f;
+            updateBuffButton();
+        }
+
         userCurrentHp = Math.max(0, userCurrentHp - damage);
         addBattleLog("🔴 " + monster.getName() + "의 공격! " + damage + " 데미지!");
 
@@ -320,15 +389,56 @@ public class BattleActivity extends AppCompatActivity {
         }
     }
 
-    private void usePotion() {
-        if (potions == null || potions.isEmpty()) {
-            Toast.makeText(this, "포션이 없습니다", Toast.LENGTH_SHORT).show();
+    /**
+     * 아이템 선택 다이얼로그 표시
+     * @param itemType "POTION" 또는 "BUFF"
+     * @param items 아이템 목록
+     */
+    private void showItemSelectionDialog(String itemType, List<Item> items) {
+        if (items == null || items.isEmpty()) {
+            String message = itemType.equals("POTION") ? "포션이 없습니다" : "버프 아이템이 없습니다";
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
             return;
         }
 
+        String title = itemType.equals("POTION") ? "포션 선택" : "버프 선택";
+        String[] itemNames = new String[items.size()];
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
+            if (itemType.equals("POTION")) {
+                itemNames[i] = item.getName() + " (HP +" + item.getHealAmount() + ")";
+            } else {
+                // 버프 종류에 따라 다른 정보 표시
+                if (item.isAttackBuff()) {
+                    itemNames[i] = "⚔️ " + item.getName() + " (공격력 x" + item.getAttackBuffMultiplier() + ")";
+                } else if (item.isDefenseBuff()) {
+                    itemNames[i] = "🛡️ " + item.getName() + " (데미지 " + item.getDefenseBoost() + "% 감소)";
+                } else {
+                    itemNames[i] = item.getName();
+                }
+            }
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setItems(itemNames, (dialog, which) -> {
+                    Item selectedItem = items.get(which);
+                    if (itemType.equals("POTION")) {
+                        useSelectedPotion(selectedItem, which);
+                    } else {
+                        useBuff(selectedItem, which);
+                    }
+                })
+                .setNegativeButton("취소", null)
+                .show();
+    }
+
+    /**
+     * 선택한 포션 사용
+     */
+    private void useSelectedPotion(Item potion, int index) {
         setActionsEnabled(false);
 
-        Item potion = potions.get(0);
         int healAmount = potion.getHealAmount();
 
         // HP 회복
@@ -339,7 +449,7 @@ public class BattleActivity extends AppCompatActivity {
         addBattleLog("💚 " + potion.getName() + " 사용! HP +" + actualHeal);
 
         // 포션 리스트에서 즉시 제거 (UI 동기화)
-        potions.remove(0);
+        potions.remove(index);
         updatePlayerUI();
         updatePotionButton();
 
@@ -361,6 +471,45 @@ public class BattleActivity extends AppCompatActivity {
 
         // 몬스터 반격
         handler.postDelayed(this::monsterAttack, 800);
+    }
+
+    /**
+     * 버프 아이템 사용 (1회성)
+     */
+    private void useBuff(Item buff, int index) {
+        // 버프 효과 적용 (다음 1회 공격 또는 피격에 적용)
+        if (buff.isAttackBuff()) {
+            attackBuffMultiplier = buff.getAttackBuffMultiplier();
+            isAttackBuffActive = true;
+            addBattleLog("⚔️ " + buff.getName() + " 사용! 다음 공격 x" + attackBuffMultiplier);
+        } else if (buff.isDefenseBuff()) {
+            defenseBuffMultiplier = buff.getDefenseBuffMultiplier();
+            isDefenseBuffActive = true;
+            addBattleLog("🛡️ " + buff.getName() + " 사용! 다음 피격 데미지 " + buff.getDefenseBoost() + "% 감소");
+        }
+
+        // 버프 리스트에서 즉시 제거 (UI 동기화)
+        buffs.remove(index);
+        updateBuffButton();
+
+        // 버프 소비 (Firebase 동기화)
+        String userId = firebaseRepository.getCurrentUserId();
+        if (userId != null) {
+            firebaseRepository.useItem(userId, buff, new FirebaseRepository.SimpleCallback() {
+                @Override
+                public void onSuccess() {
+                    // 이미 로컬에서 제거됨
+                }
+
+                @Override
+                public void onError(String message) {
+                    // 실패해도 진행 (로컬 상태 우선)
+                }
+            });
+        }
+
+        // 버프는 턴을 소비하지 않음 (바로 다음 행동 가능)
+        setActionsEnabled(true);
     }
 
     private void handleVictory() {
@@ -464,6 +613,10 @@ public class BattleActivity extends AppCompatActivity {
     private void setActionsEnabled(boolean enabled) {
         binding.btnAttack.setEnabled(enabled);
         binding.btnPotion.setEnabled(enabled && potions != null && !potions.isEmpty());
+        // 버프가 이미 적용 중이면 비활성화
+        boolean buffAvailable = buffs != null && !buffs.isEmpty();
+        boolean noActiveBuffs = !isAttackBuffActive && !isDefenseBuffActive;
+        binding.btnBuff.setEnabled(enabled && buffAvailable && noActiveBuffs);
         binding.btnRun.setEnabled(enabled);
     }
 

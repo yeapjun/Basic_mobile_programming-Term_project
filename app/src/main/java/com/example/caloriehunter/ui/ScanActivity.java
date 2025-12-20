@@ -7,7 +7,6 @@ import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -57,7 +56,6 @@ import java.util.concurrent.Executors;
  */
 public class ScanActivity extends AppCompatActivity {
 
-    private static final String TAG = "ScanActivity";
     private ActivityScanBinding binding;
 
     private ExecutorService cameraExecutor;
@@ -164,7 +162,7 @@ public class ScanActivity extends AppCompatActivity {
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis, imageCapture);
 
             } catch (Exception e) {
-                Log.e(TAG, "Camera binding failed", e);
+                // Camera binding failed
             }
         }, ContextCompat.getMainExecutor(this));
     }
@@ -195,12 +193,11 @@ public class ScanActivity extends AppCompatActivity {
                         }
                     }
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "Barcode scanning failed", e))
+                .addOnFailureListener(e -> { /* Barcode scanning failed */ })
                 .addOnCompleteListener(task -> imageProxy.close());
     }
 
     private void onBarcodeDetected(String barcode) {
-        Log.d(TAG, "Barcode detected: " + barcode);
         showLoading(true);
 
         foodRepository.searchByBarcode(barcode, new FoodRepository.FoodCallback() {
@@ -212,7 +209,6 @@ public class ScanActivity extends AppCompatActivity {
             @Override
             public void onError(String message) {
                 // Open Food Facts 실패 시 Gemini AI로 이미지 분석 fallback
-                Log.d(TAG, "Open Food Facts 실패, Gemini AI로 시도: " + message);
                 runOnUiThread(() -> {
                     Toast.makeText(ScanActivity.this,
                             "제품 DB에 없음. AI 분석 중...", Toast.LENGTH_SHORT).show();
@@ -303,32 +299,20 @@ public class ScanActivity extends AppCompatActivity {
         showLoading(true);
         isProcessing = true;
 
-        // 식약처 API 먼저 시도, 실패하면 Gemini API로 fallback
-        foodRepository.searchByFoodName(foodName, new FoodRepository.FoodCallback() {
+        // Gemini API로 음식 영양 정보 분석
+        geminiService.analyzeFoodByName(foodName, new GeminiService.GeminiCallback() {
             @Override
             public void onSuccess(NutritionData data) {
-                runOnUiThread(() -> processNutritionData(data));
+                mainHandler.post(() -> processNutritionData(data));
             }
 
             @Override
-            public void onError(String message) {
-                // 식약처 API 실패 시 Gemini API로 fallback
-                Log.d(TAG, "식약처 API 실패, Gemini API로 시도: " + message);
-                geminiService.analyzeFoodByName(foodName, new GeminiService.GeminiCallback() {
-                    @Override
-                    public void onSuccess(NutritionData data) {
-                        mainHandler.post(() -> processNutritionData(data));
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        mainHandler.post(() -> {
-                            showLoading(false);
-                            isProcessing = false;
-                            Toast.makeText(ScanActivity.this,
-                                    "음식 정보를 찾을 수 없습니다: " + error, Toast.LENGTH_SHORT).show();
-                        });
-                    }
+            public void onError(String error) {
+                mainHandler.post(() -> {
+                    showLoading(false);
+                    isProcessing = false;
+                    Toast.makeText(ScanActivity.this,
+                            "음식 정보를 찾을 수 없습니다: " + error, Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -398,14 +382,11 @@ public class ScanActivity extends AppCompatActivity {
         try {
             android.media.Image mediaImage = image.getImage();
             if (mediaImage == null) {
-                Log.e(TAG, "mediaImage is null");
                 return null;
             }
 
             int format = mediaImage.getFormat();
             android.media.Image.Plane[] planes = mediaImage.getPlanes();
-
-            Log.d(TAG, "Image format: " + format + ", planes: " + planes.length);
 
             Bitmap bitmap;
 
@@ -421,7 +402,6 @@ public class ScanActivity extends AppCompatActivity {
             }
 
             if (bitmap == null) {
-                Log.e(TAG, "Bitmap conversion returned null");
                 return null;
             }
 
@@ -435,10 +415,8 @@ public class ScanActivity extends AppCompatActivity {
                 bitmap = rotatedBitmap;
             }
 
-            Log.d(TAG, "Image converted successfully: " + bitmap.getWidth() + "x" + bitmap.getHeight());
             return bitmap;
         } catch (Exception e) {
-            Log.e(TAG, "Image conversion failed: " + e.getMessage(), e);
             return null;
         }
     }
