@@ -99,11 +99,7 @@ public class BattleActivity extends AppCompatActivity {
             showRunConfirmDialog();
         });
 
-        binding.btnResultConfirm.setOnClickListener(v -> {
-            // 메인화면으로 돌아가기 (결과 전달)
-            setResult(RESULT_OK);
-            finish();
-        });
+        // btnResultConfirm 클릭 리스너는 showResultOverlay에서 동적으로 설정
     }
 
     private void loadBattleData(String monsterId) {
@@ -554,35 +550,118 @@ public class BattleActivity extends AppCompatActivity {
                             @Override
                             public void onError(String message) {}
                         });
+
+                // 다음 몬스터가 있는지 확인
+                checkNextMonster(userId, expGain);
             }
             @Override
-            public void onError(String message) {}
+            public void onError(String message) {
+                // 실패해도 결과 화면은 표시
+                runOnUiThread(() -> showResultOverlay(true, expGain, 0));
+            }
         });
+    }
 
-        // 결과 화면
-        showResultOverlay(true, expGain);
+    private void checkNextMonster(String userId, int expGain) {
+        firebaseRepository.getMonsterQueueSize(userId, new FirebaseRepository.MonsterQueueCallback() {
+            @Override
+            public void onSuccess(int queueSize) {
+                runOnUiThread(() -> showResultOverlay(true, expGain, queueSize));
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> showResultOverlay(true, expGain, 0));
+            }
+        });
+    }
+
+    private void loadNextMonster() {
+        String userId = firebaseRepository.getCurrentUserId();
+        if (userId == null) {
+            finish();
+            return;
+        }
+
+        // 상태 초기화
+        isBattleOver = false;
+        isAttackBuffActive = false;
+        isDefenseBuffActive = false;
+        attackBuffMultiplier = 1.0f;
+        defenseBuffMultiplier = 1.0f;
+        battleLog.setLength(0);  // 로그 초기화
+        binding.tvBattleLog.setText("");
+        binding.resultOverlay.setVisibility(View.GONE);
+
+        // 다음 몬스터 로드
+        firebaseRepository.getActiveMonster(userId, new FirebaseRepository.MonsterCallback() {
+            @Override
+            public void onSuccess(Monster m) {
+                monster = m;
+                monsterCurrentHp = monster.getHp();
+                runOnUiThread(() -> {
+                    updateMonsterUI();
+                    updatePlayerUI();
+                    updatePotionButton();
+                    updateBuffButton();
+                    setActionsEnabled(true);
+                    addBattleLog("🔥 다음 몬스터 등장!");
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> {
+                    Toast.makeText(BattleActivity.this, "모든 몬스터를 처치했습니다!", Toast.LENGTH_SHORT).show();
+                    setResult(RESULT_OK);
+                    finish();
+                });
+            }
+        });
     }
 
     private void handleDefeat() {
         isBattleOver = true;
         addBattleLog("💀 패배...");
 
-        showResultOverlay(false, 0);
+        showResultOverlay(false, 0, 0);
     }
 
-    private void showResultOverlay(boolean isVictory, int expGain) {
+    private void showResultOverlay(boolean isVictory, int expGain, int remainingMonsters) {
         binding.resultOverlay.setVisibility(View.VISIBLE);
 
         if (isVictory) {
             binding.tvResultEmoji.setText("🎉");
             binding.tvResultTitle.setText("승리!");
-            binding.tvResultMessage.setText("+" + expGain + " EXP 획득!");
-            binding.tvResultMessage.setTextColor(getColor(R.color.exp_yellow));
+
+            if (remainingMonsters > 0) {
+                // 아직 남은 몬스터가 있음
+                binding.tvResultMessage.setText("+" + expGain + " EXP 획득!\n🔥 남은 몬스터: " + remainingMonsters + "마리");
+                binding.tvResultMessage.setTextColor(getColor(R.color.tier_legendary));
+                binding.btnResultConfirm.setText("다음 몬스터 도전 →");
+
+                // 버튼 클릭 시 다음 몬스터 로드
+                binding.btnResultConfirm.setOnClickListener(v -> loadNextMonster());
+            } else {
+                // 모든 몬스터 처치 완료
+                binding.tvResultMessage.setText("+" + expGain + " EXP 획득!\n✨ 모든 몬스터를 처치했습니다!");
+                binding.tvResultMessage.setTextColor(getColor(R.color.exp_yellow));
+                binding.btnResultConfirm.setText("확인");
+
+                // 버튼 클릭 시 액티비티 종료
+                binding.btnResultConfirm.setOnClickListener(v -> {
+                    setResult(RESULT_OK);
+                    finish();
+                });
+            }
         } else {
             binding.tvResultEmoji.setText("💀");
             binding.tvResultTitle.setText("패배...");
             binding.tvResultMessage.setText("다음에 다시 도전하세요");
             binding.tvResultMessage.setTextColor(getColor(R.color.text_secondary));
+            binding.btnResultConfirm.setText("확인");
+
+            binding.btnResultConfirm.setOnClickListener(v -> finish());
         }
     }
 

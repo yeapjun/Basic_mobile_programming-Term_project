@@ -230,13 +230,43 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Monster monster) {
                 activeMonster = monster;
-                runOnUiThread(() -> updateMonsterUI());
+                runOnUiThread(() -> {
+                    updateMonsterUI();
+                    loadMonsterQueueSize();
+                });
             }
 
             @Override
             public void onError(String message) {
                 activeMonster = null;
-                runOnUiThread(() -> showEmptyState());
+                runOnUiThread(() -> {
+                    showEmptyState();
+                    binding.tvMonsterQueue.setVisibility(View.GONE);
+                });
+            }
+        });
+    }
+
+    private void loadMonsterQueueSize() {
+        String userId = firebaseRepository.getCurrentUserId();
+        if (userId == null) return;
+
+        firebaseRepository.getMonsterQueueSize(userId, new FirebaseRepository.MonsterQueueCallback() {
+            @Override
+            public void onSuccess(int queueSize) {
+                runOnUiThread(() -> {
+                    if (queueSize > 1) {
+                        binding.tvMonsterQueue.setVisibility(View.VISIBLE);
+                        binding.tvMonsterQueue.setText("🔥 남은 몬스터: " + queueSize + "마리");
+                    } else {
+                        binding.tvMonsterQueue.setVisibility(View.GONE);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> binding.tvMonsterQueue.setVisibility(View.GONE));
             }
         });
     }

@@ -57,6 +57,11 @@ public class FirebaseRepository {
         void onError(String message);
     }
 
+    public interface MonsterQueueCallback {
+        void onSuccess(int queueSize);
+        void onError(String message);
+    }
+
     public interface ItemCallback {
         void onSuccess(Item item);
         void onError(String message);
@@ -158,35 +163,73 @@ public class FirebaseRepository {
     // ========== 몬스터 ==========
 
     /**
-     * 몬스터 저장
+     * 몬스터 저장 (대기열에 추가)
      */
     public void saveMonster(Monster monster, MonsterCallback callback) {
         String monsterId = monster.getId();
+        String ownerId = monster.getOwnerId();
+
         database.child("monsters").child(monsterId)
                 .setValue(monster.toMap())
                 .addOnSuccessListener(aVoid -> {
-                    // 유저의 활성 몬스터로 설정
-                    database.child("users").child(monster.getOwnerId())
-                            .child("activeMonsterId").setValue(monsterId);
-                    callback.onSuccess(monster);
+                    // 유저의 몬스터 대기열에 추가
+                    database.child("users").child(ownerId).child("monsterQueue")
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    List<String> queue = new ArrayList<>();
+                                    if (snapshot.exists()) {
+                                        for (DataSnapshot child : snapshot.getChildren()) {
+                                            String existingId = child.getValue(String.class);
+                                            if (existingId != null) {
+                                                queue.add(existingId);
+                                            }
+                                        }
+                                    }
+                                    queue.add(monsterId);
+
+                                    // 대기열 저장
+                                    database.child("users").child(ownerId).child("monsterQueue")
+                                            .setValue(queue)
+                                            .addOnSuccessListener(v -> callback.onSuccess(monster))
+                                            .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    callback.onError(error.getMessage());
+                                }
+                            });
                 })
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
     /**
-     * 유저의 활성 몬스터 조회
+     * 유저의 활성 몬스터 조회 (대기열 첫 번째)
      */
     public void getActiveMonster(String userId, MonsterCallback callback) {
-        database.child("users").child(userId).child("activeMonsterId")
+        database.child("users").child(userId).child("monsterQueue")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        String monsterId = snapshot.getValue(String.class);
+                        if (!snapshot.exists() || snapshot.getChildrenCount() == 0) {
+                            callback.onError("활성 몬스터 없음");
+                            return;
+                        }
+
+                        // 첫 번째 몬스터 ID 가져오기
+                        String monsterId = null;
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            monsterId = child.getValue(String.class);
+                            break;  // 첫 번째만 가져옴
+                        }
+
                         if (monsterId == null) {
                             callback.onError("활성 몬스터 없음");
                             return;
                         }
 
+                        final String finalMonsterId = monsterId;
                         database.child("monsters").child(monsterId)
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
@@ -195,9 +238,17 @@ public class FirebaseRepository {
                                         if (monster != null && !"defeated".equals(monster.getStatus())) {
                                             callback.onSuccess(monster);
                                         } else {
-                                            // 처치된 몬스터거나 데이터 없음 - activeMonsterId 제거
-                                            database.child("users").child(userId).child("activeMonsterId").removeValue();
-                                            callback.onError("활성 몬스터 없음");
+                                            // 처치된 몬스터 - 대기열에서 제거하고 다음 몬스터 조회
+                                            removeMonsterFromQueue(userId, finalMonsterId, new SimpleCallback() {
+                                                @Override
+                                                public void onSuccess() {
+                                                    getActiveMonster(userId, callback);  // 재귀 호출로 다음 몬스터 조회
+                                                }
+                                                @Override
+                                                public void onError(String message) {
+                                                    callback.onError("활성 몬스터 없음");
+                                                }
+                                            });
                                         }
                                     }
 
@@ -206,6 +257,59 @@ public class FirebaseRepository {
                                         callback.onError(error.getMessage());
                                     }
                                 });
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * 몬스터 대기열 크기 조회
+     */
+    public void getMonsterQueueSize(String userId, MonsterQueueCallback callback) {
+        database.child("users").child(userId).child("monsterQueue")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        int size = 0;
+                        if (snapshot.exists()) {
+                            size = (int) snapshot.getChildrenCount();
+                        }
+                        callback.onSuccess(size);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        callback.onError(error.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * 몬스터 대기열에서 특정 몬스터 제거
+     */
+    public void removeMonsterFromQueue(String userId, String monsterId, SimpleCallback callback) {
+        database.child("users").child(userId).child("monsterQueue")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<String> queue = new ArrayList<>();
+                        if (snapshot.exists()) {
+                            for (DataSnapshot child : snapshot.getChildren()) {
+                                String existingId = child.getValue(String.class);
+                                if (existingId != null && !existingId.equals(monsterId)) {
+                                    queue.add(existingId);
+                                }
+                            }
+                        }
+
+                        database.child("users").child(userId).child("monsterQueue")
+                                .setValue(queue)
+                                .addOnSuccessListener(v -> callback.onSuccess())
+                                .addOnFailureListener(e -> callback.onError(e.getMessage()));
                     }
 
                     @Override
@@ -225,27 +329,36 @@ public class FirebaseRepository {
     }
 
     /**
-     * 몬스터 처치 처리
+     * 몬스터 처치 처리 (대기열에서 제거)
      */
     public void defeatMonster(String monsterId, String ownerId, SimpleCallback callback) {
         database.child("monsters").child(monsterId).child("status").setValue("defeated")
                 .addOnSuccessListener(aVoid -> {
-                    // 유저의 활성 몬스터 제거
-                    database.child("users").child(ownerId).child("activeMonsterId").removeValue();
-                    // 처치 수 증가
-                    database.child("users").child(ownerId).child("totalMonstersKilled")
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                    Integer count = snapshot.getValue(Integer.class);
-                                    database.child("users").child(ownerId)
-                                            .child("totalMonstersKilled").setValue((count != null ? count : 0) + 1);
-                                }
+                    // 대기열에서 몬스터 제거
+                    removeMonsterFromQueue(ownerId, monsterId, new SimpleCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // 처치 수 증가
+                            database.child("users").child(ownerId).child("totalMonstersKilled")
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                            Integer count = snapshot.getValue(Integer.class);
+                                            database.child("users").child(ownerId)
+                                                    .child("totalMonstersKilled").setValue((count != null ? count : 0) + 1);
+                                        }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {}
-                            });
-                    callback.onSuccess();
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError error) {}
+                                    });
+                            callback.onSuccess();
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            callback.onError(message);
+                        }
+                    });
                 })
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }

@@ -1,7 +1,9 @@
 package com.example.caloriehunter.data.model;
 
 import com.google.firebase.database.Exclude;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,8 +29,8 @@ public class User {
     private int healthyFoodCount;
     private int unhealthyFoodCount;
 
-    // 현재 활성 몬스터 ID
-    private String activeMonsterId;
+    // 몬스터 대기열 (연속으로 나쁜 음식을 먹으면 몬스터가 쌓임)
+    private List<String> monsterQueue;
 
     // 장착 아이템
     private String equippedWeaponId;
@@ -46,6 +48,7 @@ public class User {
         this.expToNextLevel = 100;
         this.hp = 100;
         this.maxHp = 100;
+        this.monsterQueue = new ArrayList<>();
     }
 
     // 새 유저 생성
@@ -113,7 +116,7 @@ public class User {
         result.put("totalDamageDealt", totalDamageDealt);
         result.put("healthyFoodCount", healthyFoodCount);
         result.put("unhealthyFoodCount", unhealthyFoodCount);
-        result.put("activeMonsterId", activeMonsterId);
+        result.put("monsterQueue", monsterQueue);
         result.put("equippedWeaponId", equippedWeaponId);
         result.put("equippedWeaponName", equippedWeaponName);
         result.put("equippedWeaponPower", equippedWeaponPower);
@@ -156,8 +159,55 @@ public class User {
     public int getUnhealthyFoodCount() { return unhealthyFoodCount; }
     public void setUnhealthyFoodCount(int unhealthyFoodCount) { this.unhealthyFoodCount = unhealthyFoodCount; }
 
-    public String getActiveMonsterId() { return activeMonsterId; }
-    public void setActiveMonsterId(String activeMonsterId) { this.activeMonsterId = activeMonsterId; }
+    // 몬스터 대기열 관련 메서드
+    public List<String> getMonsterQueue() {
+        if (monsterQueue == null) {
+            monsterQueue = new ArrayList<>();
+        }
+        return monsterQueue;
+    }
+    public void setMonsterQueue(List<String> monsterQueue) {
+        this.monsterQueue = monsterQueue != null ? monsterQueue : new ArrayList<>();
+    }
+
+    // 호환성을 위한 메서드 (첫 번째 몬스터 반환)
+    @Exclude
+    public String getActiveMonsterId() {
+        if (monsterQueue == null || monsterQueue.isEmpty()) {
+            return null;
+        }
+        return monsterQueue.get(0);
+    }
+
+    // 대기열에 몬스터 추가
+    @Exclude
+    public void addMonsterToQueue(String monsterId) {
+        if (monsterQueue == null) {
+            monsterQueue = new ArrayList<>();
+        }
+        monsterQueue.add(monsterId);
+    }
+
+    // 첫 번째 몬스터 제거 (전투 승리 시)
+    @Exclude
+    public String removeFirstMonster() {
+        if (monsterQueue == null || monsterQueue.isEmpty()) {
+            return null;
+        }
+        return monsterQueue.remove(0);
+    }
+
+    // 대기열에 몬스터가 있는지 확인
+    @Exclude
+    public boolean hasActiveMonster() {
+        return monsterQueue != null && !monsterQueue.isEmpty();
+    }
+
+    // 대기열 크기 반환
+    @Exclude
+    public int getMonsterQueueSize() {
+        return monsterQueue != null ? monsterQueue.size() : 0;
+    }
 
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
