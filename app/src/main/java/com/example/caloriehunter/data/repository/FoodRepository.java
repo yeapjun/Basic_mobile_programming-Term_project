@@ -119,30 +119,46 @@ public class FoodRepository {
             return;
         }
 
-        Log.d(TAG, "Searching food name: " + foodName);
+        Log.d(TAG, "========== 식약처 API 검색 시작 ==========");
+        Log.d(TAG, "검색어: " + foodName);
+        Log.d(TAG, "API 키 설정됨: " + (foodSafetyApiKey.length() > 10 ? "예 (길이: " + foodSafetyApiKey.length() + ")" : "아니오"));
 
         foodSafetyApi.searchByFoodName(foodSafetyApiKey, foodName, 1, 1, "json")
                 .enqueue(new Callback<FoodSafetyApi.FoodSafetyResponse>() {
                     @Override
                     public void onResponse(Call<FoodSafetyApi.FoodSafetyResponse> call,
                                            Response<FoodSafetyApi.FoodSafetyResponse> response) {
+                        Log.d(TAG, "식약처 API 응답 코드: " + response.code());
+
                         if (response.isSuccessful() && response.body() != null) {
                             FoodSafetyApi.FoodSafetyResponse data = response.body();
 
                             if (data.body != null && data.body.items != null && !data.body.items.isEmpty()) {
-                                NutritionData nutrition = convertFromFoodSafety(data.body.items.get(0));
+                                FoodSafetyApi.FoodItem item = data.body.items.get(0);
+                                Log.d(TAG, "✅ 식약처 API 성공! 음식명: " + item.FOOD_NM_KR);
+                                Log.d(TAG, "칼로리: " + item.getCalories() + ", 단백질: " + item.getProtein());
+                                NutritionData nutrition = convertFromFoodSafety(item);
                                 callback.onSuccess(nutrition);
                             } else {
+                                Log.w(TAG, "❌ 식약처 API: 검색 결과 없음");
                                 callback.onError("음식을 찾을 수 없습니다");
                             }
                         } else {
+                            Log.e(TAG, "❌ 식약처 API 오류: " + response.code() + " - " + response.message());
+                            try {
+                                if (response.errorBody() != null) {
+                                    Log.e(TAG, "에러 바디: " + response.errorBody().string());
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "에러 바디 읽기 실패", e);
+                            }
                             callback.onError("API 응답 오류: " + response.code());
                         }
                     }
 
                     @Override
                     public void onFailure(Call<FoodSafetyApi.FoodSafetyResponse> call, Throwable t) {
-                        Log.e(TAG, "API call failed", t);
+                        Log.e(TAG, "❌ 식약처 API 네트워크 오류: " + t.getMessage(), t);
                         callback.onError("네트워크 오류: " + t.getMessage());
                     }
                 });
@@ -186,7 +202,7 @@ public class FoodRepository {
      */
     private NutritionData convertFromFoodSafety(FoodSafetyApi.FoodItem item) {
         return new NutritionData.Builder()
-                .foodName(item.DESC_KOR)
+                .foodName(item.FOOD_NM_KR)
                 .calories(item.getCalories())
                 .protein(item.getProtein())
                 .fat(item.getFat())

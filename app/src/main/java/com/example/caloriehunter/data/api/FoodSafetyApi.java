@@ -13,15 +13,15 @@ public interface FoodSafetyApi {
 
     /**
      * 식품명으로 검색
-     * @param serviceKey 공공데이터포털 API 키
+     * @param serviceKey 공공데이터포털 API 키 (URL 인코딩된 상태로 전달)
      * @param foodName 검색할 음식명
      * @param pageNo 페이지 번호
      * @param numOfRows 한 페이지 결과 수
      */
-    @GET("api/1471000/FoodNtrIrdntInfoService1/getFoodNtrItdntList1")
+    @GET("1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02")
     Call<FoodSafetyResponse> searchByFoodName(
             @Query("serviceKey") String serviceKey,
-            @Query("desc_kor") String foodName,
+            @Query("FOOD_NM_KR") String foodName,
             @Query("pageNo") int pageNo,
             @Query("numOfRows") int numOfRows,
             @Query("type") String type  // "json"
@@ -49,7 +49,7 @@ public interface FoodSafetyApi {
 
     class FoodItem {
         // 기본 정보
-        public String DESC_KOR;          // 식품명 (한글)
+        public String FOOD_NM_KR;          // 식품명 (한글)
         public String SERVING_SIZE;      // 1회 제공량
         public String NUTR_CONT1;        // 칼로리 (kcal)
         public String NUTR_CONT2;        // 탄수화물 (g)

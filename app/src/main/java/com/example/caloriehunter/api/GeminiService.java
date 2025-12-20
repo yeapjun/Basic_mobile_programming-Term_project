@@ -23,8 +23,8 @@ import java.util.concurrent.Executors;
  */
 public class GeminiService {
     private static final String TAG = "GeminiService";
-    // ★ 중요: 모델 이름을 정확히 'gemini-1.5-flash'로 설정
-    private static final String MODEL_NAME = "gemini-1.5-flash";
+    // Gemini 모델 이름
+    private static final String MODEL_NAME = "gemini-2.5-flash-lite";
 
     private static GeminiService instance;
     private final GenerativeModelFutures model;
@@ -52,33 +52,68 @@ public class GeminiService {
      * 음식 이미지를 분석하여 영양 정보 추정
      */
     public void analyzeFoodImage(Bitmap foodImage, GeminiCallback callback) {
-        String prompt = buildAnalysisPrompt();
+        try {
+            // 이미지 크기 조정 (너무 크면 API 오류 발생)
+            Bitmap resizedImage = resizeBitmap(foodImage, 1024);
+            Log.d(TAG, "Image size: " + resizedImage.getWidth() + "x" + resizedImage.getHeight());
 
-        // SDK를 사용하면 이미지를 Base64로 바꿀 필요 없이 바로 넣으면 됩니다!
-        Content content = new Content.Builder()
-                .addImage(foodImage) // 비트맵 직접 입력
-                .addText(prompt)
-                .build();
+            String prompt = buildAnalysisPrompt();
 
-        // 요청 전송
-        ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
-        handleResponse(response, callback);
+            // SDK를 사용하면 이미지를 Base64로 바꿀 필요 없이 바로 넣으면 됩니다!
+            Content content = new Content.Builder()
+                    .addImage(resizedImage) // 비트맵 직접 입력
+                    .addText(prompt)
+                    .build();
+
+            // 요청 전송
+            ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
+            handleResponse(response, callback);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to prepare image for analysis", e);
+            callback.onError("이미지 준비 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 이미지 크기 조정 (maxSize 이하로)
+     */
+    private Bitmap resizeBitmap(Bitmap original, int maxSize) {
+        int width = original.getWidth();
+        int height = original.getHeight();
+
+        if (width <= maxSize && height <= maxSize) {
+            return original;
+        }
+
+        float scale = Math.min((float) maxSize / width, (float) maxSize / height);
+        int newWidth = Math.round(width * scale);
+        int newHeight = Math.round(height * scale);
+
+        return Bitmap.createScaledBitmap(original, newWidth, newHeight, true);
     }
 
     /**
      * 음식 이름으로 영양 정보 추정 (텍스트 기반)
      */
     public void analyzeFoodByName(String foodName, GeminiCallback callback) {
-        String prompt = buildTextAnalysisPrompt(foodName);
+        Log.d(TAG, "========== Gemini 텍스트 분석 시작 ==========");
+        Log.d(TAG, "음식명: " + foodName);
 
-        // 텍스트 요청 생성
-        Content content = new Content.Builder()
-                .addText(prompt)
-                .build();
+        try {
+            String prompt = buildTextAnalysisPrompt(foodName);
 
-        // 요청 전송
-        ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
-        handleResponse(response, callback);
+            // 텍스트 요청 생성
+            Content content = new Content.Builder()
+                    .addText(prompt)
+                    .build();
+
+            // 요청 전송
+            ListenableFuture<GenerateContentResponse> response = model.generateContent(content);
+            handleResponse(response, callback);
+        } catch (Exception e) {
+            Log.e(TAG, "Gemini 요청 생성 실패: " + e.getMessage(), e);
+            callback.onError("요청 생성 실패: " + e.getMessage());
+        }
     }
 
     // 결과 처리 공통 함수
@@ -108,9 +143,24 @@ public class GeminiService {
 
             @Override
             public void onFailure(Throwable t) {
-                Log.e(TAG, "API Error", t);
-                // 여기서 404 등의 에러 메시지가 전달됩니다.
-                callback.onError("Gemini AI 오류: " + t.getMessage());
+                Log.e(TAG, "API Error: " + t.getClass().getSimpleName() + " - " + t.getMessage(), t);
+
+                String errorMessage;
+                String msg = t.getMessage() != null ? t.getMessage().toLowerCase() : "";
+
+                if (msg.contains("api key") || msg.contains("unauthorized") || msg.contains("401")) {
+                    errorMessage = "API 키가 유효하지 않습니다";
+                } else if (msg.contains("quota") || msg.contains("rate limit") || msg.contains("429")) {
+                    errorMessage = "API 요청 한도 초과";
+                } else if (msg.contains("network") || msg.contains("timeout") || msg.contains("connect")) {
+                    errorMessage = "네트워크 연결 오류";
+                } else if (msg.contains("not found") || msg.contains("404")) {
+                    errorMessage = "API 엔드포인트를 찾을 수 없음";
+                } else {
+                    errorMessage = t.getMessage() != null ? t.getMessage() : "알 수 없는 오류";
+                }
+
+                callback.onError(errorMessage);
             }
         }, executor);
     }
