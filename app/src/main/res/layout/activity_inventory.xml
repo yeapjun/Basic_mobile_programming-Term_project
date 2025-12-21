@@ -215,4 +215,46 @@
 
     </LinearLayout>
 
+    <!-- 연말 장식 - 눈송이 (맨 위에 표시) -->
+    <TextView
+        android:id="@+id/invSnow1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="20sp"
+        android:textColor="#60FFFFFF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginEnd="30dp"
+        android:layout_marginTop="100dp"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <TextView
+        android:id="@+id/invSnow2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✨"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="180dp"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <TextView
+        android:id="@+id/invSnow3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="16sp"
+        android:textColor="#50FFFFFF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginEnd="40dp"
+        android:layout_marginBottom="120dp"
+        android:clickable="false"
+        android:focusable="false" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

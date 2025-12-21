@@ -79,8 +79,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // 화면 복귀 시 데이터 갱신
-        if (currentUser != null) {
-            loadActiveMonster();
+        String userId = firebaseRepository.getCurrentUserId();
+        if (userId != null) {
+            loadUserData(userId);
         }
     }
 

@@ -79,8 +79,7 @@ public class FirebaseRepository {
 
     private FirebaseRepository() {
         auth = FirebaseAuth.getInstance();
-        // Database URL을 명시적으로 지정 (google-services.json에 firebase_url이 없는 경우 필요)
-        database = FirebaseDatabase.getInstance("https://term-project-a8065-default-rtdb.asia-southeast1.firebasedatabase.app").getReference();
+        database = FirebaseDatabase.getInstance().getReference();
     }
 
     public static synchronized FirebaseRepository getInstance() {

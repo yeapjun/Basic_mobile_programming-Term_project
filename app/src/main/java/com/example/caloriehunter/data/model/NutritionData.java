@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 
 /**
  * 영양 성분 데이터 모델
- * Open Food Facts API 및 식약처 API 응답을 통합하는 구조
+ * Open Food Facts API 응답을 통합하는 구조
  */
 public class NutritionData {
 

@@ -39,7 +39,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="오늘의 헌터"
+                        android:text="Smart Plate"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
@@ -47,7 +47,7 @@
                         android:id="@+id/tvNickname"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="칼로리헌터"
+                        android:text="스마트플레이트"
                         android:textColor="@color/white"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -906,5 +906,53 @@
         </LinearLayout>
 
     </FrameLayout>
+
+    <!-- 연말 장식 - 눈송이 (맨 위에 표시) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="24sp"
+        android:textColor="#70FFFFFF"
+        android:layout_gravity="end"
+        android:layout_marginEnd="25dp"
+        android:layout_marginTop="80dp"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="18sp"
+        android:textColor="#50FFFFFF"
+        android:layout_gravity="start"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="180dp"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✨"
+        android:textSize="16sp"
+        android:layout_gravity="end"
+        android:layout_marginEnd="50dp"
+        android:layout_marginTop="280dp"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="❄"
+        android:textSize="20sp"
+        android:textColor="#60FFFFFF"
+        android:layout_gravity="start"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="400dp"
+        android:clickable="false"
+        android:focusable="false" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -20,7 +20,7 @@ public class NutritionStats {
     private int unhealthyCount;
     private int totalCount;
 
-    // 일일 권장량 (식약처 기준)
+    // 일일 권장량
     public static final float DAILY_CALORIES = 2000f;
     public static final float DAILY_PROTEIN = 55f;
     public static final float DAILY_CARBOHYDRATE = 324f;

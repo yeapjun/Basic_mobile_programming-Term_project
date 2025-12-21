@@ -26,10 +26,6 @@ android {
             properties.load(FileInputStream(localPropertiesFile))
         }
 
-        // 식약처 키 등록
-        val mfdsKey = properties.getProperty("MFDS_API_KEY", "")
-        buildConfigField("String", "MFDS_API_KEY", "\"$mfdsKey\"")
-
         // Gemini API 키 등록
         val geminiKey = properties.getProperty("GEMINI_API_KEY", "")
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")

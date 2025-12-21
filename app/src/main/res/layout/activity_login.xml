@@ -101,7 +101,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Calorie Hunter"
+            android:text="Smart Plate"
             android:textSize="36sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
